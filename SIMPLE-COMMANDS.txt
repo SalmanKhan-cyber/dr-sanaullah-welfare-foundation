@@ -1,0 +1,15 @@
+=== COPY THESE COMMANDS INTO YOUR TERMINAL ===
+
+Command 1 (Navigate to backend folder):
+cd C:\Users\faaaaaast\Desktop\foundation\apps\backend
+
+Command 2 (Start the server):
+npm run dev
+
+=== THAT'S IT! ===
+
+Wait for this message:
+"Backend running on http://localhost:4000"
+
+Then refresh your browser and try checkout!
+

@@ -1,0 +1,31 @@
+===========================================
+QUICK FIX: Medicine Images Not Uploading
+===========================================
+
+PROBLEM:
+- Images not uploading when adding medicine
+- Icons showing instead of images
+
+ROOT CAUSE:
+The 'medicines' storage bucket doesn't exist!
+
+SOLUTION:
+1. Open Supabase Dashboard
+2. Go to Storage
+3. Click "New bucket"
+4. Name: medicines
+5. Make it PUBLIC (checked)
+6. Click "Create bucket"
+
+OR use SQL script:
+- File: supabase/create-medicines-bucket.sql
+- Copy contents
+- Run in Supabase SQL Editor
+
+AFTER CREATING BUCKET:
+1. Refresh browser (F5)
+2. Try uploading image again
+3. Images should work!
+
+===========================================
+

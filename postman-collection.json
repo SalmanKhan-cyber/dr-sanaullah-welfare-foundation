@@ -1,0 +1,238 @@
+{
+  "info": {
+    "name": "Dr. Sanaullah Welfare Foundation API",
+    "description": "Complete API collection for testing all endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Sign Up with Email",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"patient@test.com\",\n  \"password\": \"Patient123!\",\n  \"role\": \"patient\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/auth/signup-email",
+              "host": ["http://localhost:4000"],
+              "path": ["api", "auth", "signup-email"]
+            }
+          }
+        },
+        {
+          "name": "Send Phone OTP",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+923001234567\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/auth/otp",
+              "host": ["http://localhost:4000"],
+              "path": ["api", "auth", "otp"]
+            }
+          }
+        },
+        {
+          "name": "Set User Role (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"USER_ID_HERE\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/auth/set-role",
+              "host": ["http://localhost:4000"],
+              "path": ["api", "auth", "set-role"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Donations",
+      "item": [
+        {
+          "name": "Make Donation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer YOUR_TOKEN"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 5000,\n  \"purpose\": \"medical\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/donations",
+              "host": ["http://localhost:4000"],
+              "path": ["api", "donations"]
+            }
+          }
+        },
+        {
+          "name": "Get My Donations",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer YOUR_TOKEN"}],
+            "url": {
+              "raw": "http://localhost:4000/api/donations/me",
+              "host": ["http://localhost:4000"],
+              "path": ["api", "donations", "me"]
+            }
+          }
+        },
+        {
+          "name": "Get All Donations (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer YOUR_TOKEN"}],
+            "url": {
+              "raw": "http://localhost:4000/api/donations/all",
+              "host": ["http://localhost:4000"],
+              "path": ["api", "donations", "all"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Courses",
+      "item": [
+        {
+          "name": "Get All Courses",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer YOUR_TOKEN"}],
+            "url": {
+              "raw": "http://localhost:4000/api/courses",
+              "host": ["http://localhost:4000"],
+              "path": ["api", "courses"]
+            }
+          }
+        },
+        {
+          "name": "Create Course (Teacher)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer YOUR_TOKEN"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Ultrasound Training\",\n  \"description\": \"Complete ultrasound technician course\",\n  \"duration\": \"3 months\",\n  \"discount_rate\": 70\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/courses",
+              "host": ["http://localhost:4000"],
+              "path": ["api", "courses"]
+            }
+          }
+        },
+        {
+          "name": "Enroll in Course (Student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer YOUR_TOKEN"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_id\": \"COURSE_ID_HERE\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/courses/enroll",
+              "host": ["http://localhost:4000"],
+              "path": ["api", "courses", "enroll"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pharmacy",
+      "item": [
+        {
+          "name": "Get Inventory",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer YOUR_TOKEN"}],
+            "url": {
+              "raw": "http://localhost:4000/api/pharmacy/items",
+              "host": ["http://localhost:4000"],
+              "path": ["api", "pharmacy", "items"]
+            }
+          }
+        },
+        {
+          "name": "Add Medicine",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer YOUR_TOKEN"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Paracetamol 500mg\",\n  \"stock\": 1000,\n  \"expiry\": \"2025-12-31\",\n  \"discount_rate\": 50\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/pharmacy/items",
+              "host": ["http://localhost:4000"],
+              "path": ["api", "pharmacy", "items"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer YOUR_TOKEN"}],
+            "url": {
+              "raw": "http://localhost:4000/api/notifications",
+              "host": ["http://localhost:4000"],
+              "path": ["api", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer YOUR_TOKEN"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"NOTIFICATION_ID\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/api/notifications/read",
+              "host": ["http://localhost:4000"],
+              "path": ["api", "notifications", "read"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+
