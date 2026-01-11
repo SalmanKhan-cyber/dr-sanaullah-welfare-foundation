@@ -42,6 +42,16 @@ app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || '*', credentials: 
 app.use(express.json({ limit: '5mb' }));
 
 // Health check endpoints
+app.get('/', (_req, res) => res.json({ 
+  message: 'DSWF Backend API is running',
+  status: 'ok',
+  version: '0.1.0',
+  endpoints: {
+    health: '/health',
+    api: '/api/health',
+    docs: 'API endpoints start with /api/'
+  }
+}));
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.get('/api/health', (_req, res) => res.json({ ok: true, timestamp: new Date().toISOString() }));
 
