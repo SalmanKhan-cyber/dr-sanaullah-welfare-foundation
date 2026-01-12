@@ -2,7 +2,11 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-	// For Cloudflare Pages, use process.env directly
+	// For Cloudflare Pages, use hardcoded values as fallback
+	const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://qudebdejubackprbarvc.supabase.co';
+	const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1ZGViZGVqdWJhY2twcmJhcnZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NjQxMDEsImV4cCI6MjA3NzM0MDEwMX0.S1Mlr0_RliSCTKIbaMGth4EiVRiUjmxOKwRYu6vQQ1Y';
+	const apiUrl = process.env.VITE_API_URL || 'https://api.drsanaullahwelfarefoundation.com';
+
 	return {
 		plugins: [react()],
 		server: { 
@@ -11,9 +15,9 @@ export default defineConfig(({ mode }) => {
 		},
 		define: {
 			// Expose environment variables to the client
-			'process.env.VITE_SUPABASE_URL': JSON.stringify(process.env.VITE_SUPABASE_URL),
-			'process.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY),
-			'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL),
+			'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
+			'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
+			'import.meta.env.VITE_API_URL': JSON.stringify(apiUrl),
 		}
 	};
 });
