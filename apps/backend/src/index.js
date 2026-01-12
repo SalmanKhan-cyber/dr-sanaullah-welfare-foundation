@@ -38,35 +38,15 @@ const app = express();
 const port = process.env.PORT || 4000;
 
 // Disable helmet for CORS or configure it properly
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
+app.use(helmet());
 
-// Manual CORS handling - MUST come before helmet
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const allowedOrigins = [
-    'https://drsanaullahwelfarefoundation.com',
-    'https://www.drsanaullahwelfarefoundation.com',
-    'https://dr-sanaullah-welfare-foundation.pages.dev',
-    'https://dswf-backend.onrender.com'
-  ];
-  
-  // Always set CORS headers
-  res.header('Access-Control-Allow-Origin', allowedOrigins.includes(origin) ? origin : allowedOrigins[0]);
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    res.header('Access-Control-Max-Age', '86400');
-    res.status(200).end();
-    return;
-  }
-  
-  next();
-});
+// Simple CORS configuration
+app.use(cors({
+  origin: ['https://drsanaullahwelfarefoundation.com', 'https://www.drsanaullahwelfarefoundation.com', 'https://dr-sanaullah-welfare-foundation.pages.dev', 'https://dswf-backend.onrender.com'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.use(express.json({ limit: '5mb' }));
 
