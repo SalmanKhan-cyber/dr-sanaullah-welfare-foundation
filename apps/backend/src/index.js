@@ -37,17 +37,26 @@ import homeServicesRoutes from './routes/homeServices.js';
 const app = express();
 const port = process.env.PORT || 4000;
 
-// Disable helmet for CORS or configure it properly
-app.use(helmet());
+// Trust proxy for Cloudflare and other reverse proxies
+app.set("trust proxy", true);
 
-// Simple CORS configuration
-app.use(cors({
-  origin: ['https://drsanaullahwelfarefoundation.com', 'https://www.drsanaullahwelfarefoundation.com', 'https://dr-sanaullah-welfare-foundation.pages.dev', 'https://dr-sanaullah-welfare-foundation.onrender.com'],
-  credentials: true,
+// Production-safe CORS configuration - BEFORE all routes
+const corsOptions = {
+  origin: [
+    'https://drsanaullahwelfarefoundation.com',
+    'https://www.drsanaullahwelfarefoundation.com'
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
 
+app.use(cors(corsOptions));
+
+// Global OPTIONS handling for preflight requests
+app.options("*", cors(corsOptions));
+
+app.use(helmet());
 app.use(express.json({ limit: '5mb' }));
 
 // Health check endpoints
