@@ -14,10 +14,12 @@ export default defineConfig(({ mode }) => {
 			host: '0.0.0.0'
 		},
 		define: {
-			// Expose environment variables to the client
+			// Expose environment variables to client
 			'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
 			'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
 			'import.meta.env.VITE_API_URL': JSON.stringify(apiUrl),
+			// Also define process.env for fallback
+			'process.env.VITE_API_URL': JSON.stringify(apiUrl),
 		}
 	};
 });
