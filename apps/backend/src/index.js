@@ -48,7 +48,8 @@ app.use((req, res, next) => {
   const allowedOrigins = [
     'https://drsanaullahwelfarefoundation.com',
     'https://www.drsanaullahwelfarefoundation.com',
-    'https://dr-sanaullah-welfare-foundation.pages.dev'
+    'https://dr-sanaullah-welfare-foundation.pages.dev',
+    'https://dswf-backend.onrender.com'
   ];
   
   // Always set CORS headers
