@@ -39,7 +39,7 @@ const port = process.env.PORT || 4000;
 
 app.use(helmet());
 
-// Remove cors middleware and handle CORS manually
+// Manual CORS handling with proper headers
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   const allowedOrigins = [
@@ -48,16 +48,16 @@ app.use((req, res, next) => {
     'https://dr-sanaullah-welfare-foundation.pages.dev'
   ];
   
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  
+  // Set CORS headers for all requests
+  res.header('Access-Control-Allow-Origin', allowedOrigins.includes(origin) ? origin : allowedOrigins[0]);
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
   
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
+    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    res.status(200).end();
     return;
   }
   
