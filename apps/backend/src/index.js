@@ -42,7 +42,7 @@ app.use(helmet());
 
 // Simple CORS configuration
 app.use(cors({
-  origin: ['https://drsanaullahwelfarefoundation.com', 'https://www.drsanaullahwelfarefoundation.com', 'https://dr-sanaullah-welfare-foundation.pages.dev', 'https://dswf-backend.onrender.com'],
+  origin: ['https://drsanaullahwelfarefoundation.com', 'https://www.drsanaullahwelfarefoundation.com', 'https://dr-sanaullah-welfare-foundation.pages.dev', 'https://dr-sanaullah-welfare-foundation.onrender.com'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

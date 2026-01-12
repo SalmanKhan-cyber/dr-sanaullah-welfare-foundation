@@ -5,7 +5,7 @@ export default defineConfig(({ mode }) => {
 	// For Cloudflare Pages, use hardcoded values as fallback
 	const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://qudebdejubackprbarvc.supabase.co';
 	const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1ZGViZGVqdWJhY2twcmJhcnZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3NjQxMDEsImV4cCI6MjA3NzM0MDEwMX0.S1Mlr0_RliSCTKIbaMGth4EiVRiUjmxOKwRYu6vQQ1Y';
-	const apiUrl = process.env.VITE_API_URL || 'https://dswf-backend.onrender.com';
+	const apiUrl = process.env.VITE_API_URL || 'https://dr-sanaullah-welfare-foundation.onrender.com';
 
 	return {
 		plugins: [react()],
