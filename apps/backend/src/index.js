@@ -38,7 +38,19 @@ const app = express();
 const port = process.env.PORT || 4000;
 
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || '*', credentials: true }));
+// Explicit CORS configuration for Cloudflare Pages
+const allowedOrigins = [
+  'https://drsanaullahwelfarefoundation.com',
+  'https://www.drsanaullahwelfarefoundation.com',
+  'https://dr-sanaullah-welfare-foundation.pages.dev'
+];
+
+app.use(cors({ 
+  origin: allowedOrigins, 
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json({ limit: '5mb' }));
 
 // Health check endpoints
