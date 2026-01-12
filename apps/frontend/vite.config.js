@@ -20,6 +20,18 @@ export default defineConfig(({ mode }) => {
 			'import.meta.env.VITE_API_URL': JSON.stringify(apiUrl),
 			// Also define process.env for fallback
 			'process.env.VITE_API_URL': JSON.stringify(apiUrl),
+		},
+		// Add proxy for development
+		server: {
+			port: 5173,
+			host: '0.0.0.0',
+			proxy: {
+				'/api': {
+					target: apiUrl,
+					changeOrigin: true,
+					secure: true
+				}
+			}
 		}
 	};
 });
