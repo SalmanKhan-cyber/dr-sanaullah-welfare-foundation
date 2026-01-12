@@ -2,6 +2,9 @@ import { supabase } from './supabase';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
+// Debug log to verify API URL
+console.log('🔍 API URL being used:', API_URL);
+
 // Simple in-memory cache for API responses (10 minute TTL for better performance)
 const cache = new Map();
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes - increased for better performance
