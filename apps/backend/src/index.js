@@ -37,9 +37,12 @@ import homeServicesRoutes from './routes/homeServices.js';
 const app = express();
 const port = process.env.PORT || 4000;
 
-app.use(helmet());
+// Disable helmet for CORS or configure it properly
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
-// Manual CORS handling with proper headers
+// Manual CORS handling - MUST come before helmet
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   const allowedOrigins = [
@@ -48,7 +51,7 @@ app.use((req, res, next) => {
     'https://dr-sanaullah-welfare-foundation.pages.dev'
   ];
   
-  // Set CORS headers for all requests
+  // Always set CORS headers
   res.header('Access-Control-Allow-Origin', allowedOrigins.includes(origin) ? origin : allowedOrigins[0]);
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -56,7 +59,7 @@ app.use((req, res, next) => {
   
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    res.header('Access-Control-Max-Age', '86400'); // 24 hours
+    res.header('Access-Control-Max-Age', '86400');
     res.status(200).end();
     return;
   }
