@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { supabaseAdmin } from '../lib/supabase.js';
+import { uploadFile } from '../lib/storage.js';
+import { generatePatientFilePDF, generatePatientFileName } from '../lib/patientFileGenerator.js';
 
 const router = Router();
 
@@ -255,6 +257,59 @@ router.post('/', async (req, res) => {
 			});
 		}
 		
+		// Generate patient file for the appointment
+		try {
+			console.log('📄 Generating patient file for appointment:', data.id);
+			
+			// Get complete patient data
+			const { data: completePatient } = await supabaseAdmin
+				.from('patients')
+				.select('*')
+				.eq('user_id', userId)
+				.single();
+			
+			// Get complete doctor data
+			const { data: completeDoctor } = await supabaseAdmin
+				.from('doctors')
+				.select('*')
+				.eq('id', doctor_id)
+				.single();
+			
+			// Prepare appointment data for PDF generation
+			const appointmentData = {
+				patient: {
+					...completePatient,
+					email: patient.email
+				},
+				doctor: completeDoctor || { name: data.doctors?.name },
+				appointment: {
+					...data,
+					date: appointment_date,
+					time: appointment_time
+				}
+			};
+			
+			// Generate PDF
+			const pdfBuffer = await generatePatientFilePDF(appointmentData);
+			
+			// Generate filename
+			const fileName = generatePatientFileName(appointmentData.patient, appointmentData.appointment);
+			
+			// Upload to storage
+			const fileUrl = await uploadFile('patient-files', pdfBuffer, fileName, 'application/pdf');
+			
+			// Update appointment with patient file URL
+			await supabaseAdmin
+				.from('appointments')
+				.update({ patient_file_url: fileUrl })
+				.eq('id', data.id);
+			
+			console.log('✅ Patient file generated and uploaded:', fileUrl);
+		} catch (fileError) {
+			console.error('❌ Error generating patient file:', fileError);
+			// Don't fail the appointment booking if file generation fails
+		}
+		
 		res.json({ appointment: data });
 	} catch (err) {
 		res.status(500).json({ error: err.message });
@@ -418,6 +473,59 @@ router.put('/:id/time', async (req, res) => {
 		
 		res.json({ appointment: data });
 	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
+});
+
+// Get patient file download URL
+router.get('/:appointmentId/patient-file', async (req, res) => {
+	try {
+		const { appointmentId } = req.params;
+		const userId = req.user.id;
+		const userRole = req.user.role;
+		
+		console.log(`🔍 [Patient File] Request for appointment: ${appointmentId}, User: ${userId}, Role: ${userRole}`);
+		
+		// Get appointment with patient file URL
+		const { data: appointment, error } = await supabaseAdmin
+			.from('appointments')
+			.select('patient_file_url, patient_id, doctors(user_id)')
+			.eq('id', appointmentId)
+			.single();
+		
+		if (error || !appointment) {
+			console.error('❌ [Patient File] Appointment not found:', error);
+			return res.status(404).json({ error: 'Appointment not found' });
+		}
+		
+		// Check access permissions
+		const isPatient = appointment.patient_id === userId;
+		const isDoctor = appointment.doctors?.user_id === userId;
+		const isAdmin = userRole === 'admin';
+		
+		if (!isPatient && !isDoctor && !isAdmin) {
+			console.error(`❌ [Patient File] Access denied for user: ${userId}`);
+			return res.status(403).json({ error: 'Access denied' });
+		}
+		
+		if (!appointment.patient_file_url) {
+			console.error(`❌ [Patient File] No patient file found for appointment: ${appointmentId}`);
+			return res.status(404).json({ error: 'Patient file not found' });
+		}
+		
+		console.log(`🔍 [Patient File] Getting signed URL for: ${appointment.patient_file_url}`);
+		
+		// Extract file path from URL
+		const filePath = appointment.patient_file_url.split('/').pop();
+		
+		// Generate signed URL
+		const { getSignedUrl } = await import('../lib/storage.js');
+		const signedUrl = await getSignedUrl('patient-files', filePath);
+		
+		console.log(`✅ [Patient File] Generated signed URL for appointment: ${appointmentId}`);
+		res.json({ url: signedUrl });
+	} catch (err) {
+		console.error('❌ [Patient File] Error:', err);
 		res.status(500).json({ error: err.message });
 	}
 });

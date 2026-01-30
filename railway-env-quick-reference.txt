@@ -1,0 +1,48 @@
+================================================================================
+RAILWAY ENVIRONMENT VARIABLES - QUICK REFERENCE
+================================================================================
+
+BACKEND SERVICE VARIABLES (Required)
+================================================================================
+PORT=4000
+NODE_ENV=production
+
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+
+CORS_ORIGIN=https://your-frontend.railway.app
+FRONTEND_URL=https://your-frontend.railway.app
+LOGO_URL=https://your-frontend.railway.app/last-logo.png
+
+
+FRONTEND SERVICE VARIABLES (Required)
+================================================================================
+VITE_API_URL=https://your-backend.railway.app
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key_here
+
+
+OPTIONAL VARIABLES
+================================================================================
+# For Backend (if using custom JWT):
+JWT_SECRET=your_jwt_secret_here
+
+# For Frontend (if using Google Maps):
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+
+
+INSTRUCTIONS
+================================================================================
+1. Replace "your-project", "your_*_key", and Railway URLs with actual values
+2. In Railway: Service → Variables → Add Variable (for each variable above)
+3. Redeploy after adding variables
+4. Verify: curl https://your-backend.railway.app/api/health
+
+
+SECURITY REMINDERS
+================================================================================
+⚠️  Never commit SUPABASE_SERVICE_ROLE_KEY or JWT_SECRET to Git
+✅  VITE_* variables are safe (compiled into frontend build, already public)
+✅  Use Railway's Secret variables for sensitive values
+
