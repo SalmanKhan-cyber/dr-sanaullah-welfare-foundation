@@ -20,10 +20,11 @@ SELECT
   d.specialization,
   u.email as user_email,
   u.role as user_role,
-  u.verified as user_verified
+  u.verified as user_verified,
+  u.created_at as user_created_at
 FROM doctors d
 LEFT JOIN users u ON d.user_id = u.id
-ORDER BY d.created_at DESC;
+ORDER BY u.created_at DESC;
 
 -- Check for doctors without user_id (this would cause the issue)
 SELECT 
@@ -47,6 +48,7 @@ SELECT
   u.name,
   u.role,
   u.verified,
+  u.created_at,
   CASE 
     WHEN d.id IS NULL THEN 'DOCTOR ROLE BUT NO PROFILE'
     ELSE 'HAS DOCTOR PROFILE'
