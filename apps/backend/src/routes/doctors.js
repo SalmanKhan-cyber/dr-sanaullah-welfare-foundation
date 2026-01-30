@@ -187,7 +187,7 @@ router.post('/upload-image', authMiddleware, upload.single('file'), async (req, 
 
 		// Upload using service role (bypasses RLS)
 		const { error: uploadError } = await supabaseAdmin.storage
-			.from('certificates')
+			.from('doctor-images')
 			.upload(path, req.file.buffer, { 
 				contentType: req.file.mimetype,
 				upsert: false 
@@ -195,21 +195,12 @@ router.post('/upload-image', authMiddleware, upload.single('file'), async (req, 
 
 		if (uploadError) throw new Error(uploadError.message);
 
-		// Get public URL (works if bucket is public)
-		const { data: publicUrlData } = supabaseAdmin.storage
-			.from('certificates')
-			.getPublicUrl(path);
+		// Get signed URL (since bucket is private)
+		const { data: signedUrlData } = await supabaseAdmin.storage
+			.from('doctor-images')
+			.createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year expiry
 
-		// If public URL doesn't work, create a long-lived signed URL (1 year)
-		let imageUrl = publicUrlData?.publicUrl;
-		if (!imageUrl) {
-			const { data: signedData, error: signedError } = await supabaseAdmin.storage
-				.from('certificates')
-				.createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
-			
-			if (signedError) throw new Error(signedError.message);
-			imageUrl = signedData?.signedUrl;
-		}
+		const imageUrl = signedUrlData?.signedUrl;
 
 		res.json({ 
 			url: imageUrl,
