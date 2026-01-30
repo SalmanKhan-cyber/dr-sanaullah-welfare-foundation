@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { supabaseAdmin } from '../lib/supabase.js';
 import { uploadFile } from '../lib/storage.js';
 import { generatePatientFilePDF, generatePatientFileName } from '../lib/patientFileGenerator.js';
+import { generateSessionSummaryPDF, generateSessionSummaryFileName } from '../lib/sessionSummaryGenerator.js';
 
 const router = Router();
 
@@ -526,6 +527,124 @@ router.get('/:appointmentId/patient-file', async (req, res) => {
 		res.json({ url: signedUrl });
 	} catch (err) {
 		console.error('❌ [Patient File] Error:', err);
+		res.status(500).json({ error: err.message });
+	}
+});
+
+// Get session summary data
+router.get('/:appointmentId/session-summary', async (req, res) => {
+	try {
+		const { appointmentId } = req.params;
+		const userId = req.user.id;
+		const userRole = req.user.role;
+		
+		console.log(`🔍 [Session Summary] Request for appointment: ${appointmentId}, User: ${userId}, Role: ${userRole}`);
+		
+		// Get appointment with all related data
+		const { data: appointment, error } = await supabaseAdmin
+			.from('appointments')
+			.select(`
+				*,
+				patients(user_id, name, age, gender, phone, email),
+				doctors(name, specialization)
+			`)
+			.eq('id', appointmentId)
+			.single();
+		
+		if (error || !appointment) {
+			console.error('❌ [Session Summary] Appointment not found:', error);
+			return res.status(404).json({ error: 'Appointment not found' });
+		}
+		
+		// Check access permissions
+		const isPatient = appointment.patient_id === userId;
+		const isDoctor = appointment.doctors?.user_id === userId;
+		const isAdmin = userRole === 'admin';
+		
+		if (!isPatient && !isDoctor && !isAdmin) {
+			console.error(`❌ [Session Summary] Access denied for user: ${userId}`);
+			return res.status(403).json({ error: 'Access denied' });
+		}
+		
+		// Format response data
+		const responseData = {
+			patient: appointment.patients,
+			doctor: appointment.doctors,
+			appointment: {
+				date: appointment.appointment_date,
+				time: appointment.appointment_time,
+				status: appointment.status
+			}
+		};
+		
+		console.log(`✅ [Session Summary] Data retrieved for appointment: ${appointmentId}`);
+		res.json(responseData);
+	} catch (err) {
+		console.error('❌ [Session Summary] Error:', err);
+		res.status(500).json({ error: err.message });
+	}
+});
+
+// Generate and download session summary PDF
+router.get('/:appointmentId/session-summary/pdf', async (req, res) => {
+	try {
+		const { appointmentId } = req.params;
+		const userId = req.user.id;
+		const userRole = req.user.role;
+		
+		console.log(`🔍 [Session Summary PDF] Request for appointment: ${appointmentId}, User: ${userId}, Role: ${userRole}`);
+		
+		// Get appointment with all related data
+		const { data: appointment, error } = await supabaseAdmin
+			.from('appointments')
+			.select(`
+				*,
+				patients(user_id, name, age, gender, phone, email),
+				doctors(name, specialization)
+			`)
+			.eq('id', appointmentId)
+			.single();
+		
+		if (error || !appointment) {
+			console.error('❌ [Session Summary PDF] Appointment not found:', error);
+			return res.status(404).json({ error: 'Appointment not found' });
+		}
+		
+		// Check access permissions
+		const isPatient = appointment.patient_id === userId;
+		const isDoctor = appointment.doctors?.user_id === userId;
+		const isAdmin = userRole === 'admin';
+		
+		if (!isPatient && !isDoctor && !isAdmin) {
+			console.error(`❌ [Session Summary PDF] Access denied for user: ${userId}`);
+			return res.status(403).json({ error: 'Access denied' });
+		}
+		
+		// Prepare data for PDF generation
+		const appointmentData = {
+			patient: appointment.patients,
+			doctor: appointment.doctors,
+			appointment: {
+				date: appointment.appointment_date,
+				time: appointment.appointment_time,
+				status: appointment.status
+			},
+			appointmentId
+		};
+		
+		// Generate PDF
+		const pdfBuffer = await generateSessionSummaryPDF(appointmentData);
+		
+		// Set response headers
+		const fileName = generateSessionSummaryFileName(appointment.patients, appointmentId);
+		res.setHeader('Content-Type', 'application/pdf');
+		res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+		res.setHeader('Content-Length', pdfBuffer.length);
+		
+		console.log(`✅ [Session Summary PDF] Generated for appointment: ${appointmentId}`);
+		res.send(pdfBuffer);
+	} catch (err) {
+		console.error('❌ [Session Summary PDF] Error:', err);
 		res.status(500).json({ error: err.message });
 	}
 });
