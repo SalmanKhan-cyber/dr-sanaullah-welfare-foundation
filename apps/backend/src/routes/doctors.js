@@ -112,10 +112,48 @@ router.put('/me', async (req, res) => {
 // Add doctor (admin only)
 router.post('/', async (req, res) => {
 	try {
-		const { name, specialization, discount_rate, degrees, image_url, consultation_fee, timing } = req.body || {};
+		const { name, specialization, discount_rate, degrees, image_url, consultation_fee, timing, email } = req.body || {};
 		if (!name) return res.status(400).json({ error: 'Name required' });
 		
+		let userId = null;
+		
+		// If email is provided, find or create user account
+		if (email) {
+			// Check if user already exists
+			const { data: existingUser } = await supabaseAdmin
+				.from('users')
+				.select('id')
+				.eq('email', email)
+				.single();
+			
+			if (existingUser) {
+				userId = existingUser.id;
+				console.log(`📋 Found existing user for doctor: ${email}`);
+			} else {
+				// Create new user account
+				const { data: newUser, error: userError } = await supabaseAdmin
+					.from('users')
+					.insert({
+						name: name,
+						email: email,
+						role: 'doctor',
+						verified: true // Admin-created doctors are auto-verified
+					})
+					.select('id')
+					.single();
+				
+				if (userError) {
+					console.error('❌ Failed to create user for doctor:', userError);
+					return res.status(400).json({ error: 'Failed to create user account: ' + userError.message });
+				}
+				
+				userId = newUser.id;
+				console.log(`✅ Created new user account for doctor: ${email}`);
+			}
+		}
+		
 		const doctorData = {
+			user_id: userId, // Link to user account if available
 			name,
 			specialization: specialization || null,
 			discount_rate: discount_rate || 50,
@@ -132,7 +170,13 @@ router.post('/', async (req, res) => {
 			.single();
 		
 		if (error) return res.status(400).json({ error: error.message });
-		res.json({ doctor: data });
+		
+		console.log(`✅ Created doctor profile: ${name} (user_id: ${userId})`);
+		res.json({ 
+			doctor: data,
+			user_created: !!userId,
+			message: userId ? 'Doctor profile and user account created successfully' : 'Doctor profile created (no user account linked)'
+		});
 	} catch (err) {
 		res.status(500).json({ error: err.message });
 	}

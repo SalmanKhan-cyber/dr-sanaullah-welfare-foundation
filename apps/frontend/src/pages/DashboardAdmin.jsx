@@ -106,7 +106,7 @@ export default function DashboardAdmin() {
 	const [searchingReceipt, setSearchingReceipt] = useState(false);
 	
 	// Forms
-	const [doctorForm, setDoctorForm] = useState({ name: '', specialization: '', degrees: '', discount_rate: 50, image_url: '', consultation_fee: '', timing: '', home_services: false });
+	const [doctorForm, setDoctorForm] = useState({ name: '', email: '', specialization: '', degrees: '', discount_rate: 50, image_url: '', consultation_fee: '', timing: '', home_services: false });
 	const [courseForm, setCourseForm] = useState({ title: '', description: '', duration: '', discount_rate: 70, trainer_id: '' });
 	const [medicineForm, setMedicineForm] = useState(() => ({ ...DEFAULT_MEDICINE_FORM }));
 	const [medicineImage, setMedicineImage] = useState(null);
@@ -1233,10 +1233,20 @@ export default function DashboardAdmin() {
 		try {
 			await apiRequest('/api/doctors', { 
 				method: 'POST', 
-				body: JSON.stringify(doctorForm) 
+				body: JSON.stringify({ 
+					name: doctorForm.name, 
+					email: doctorForm.email, 
+					specialization: doctorForm.specialization, 
+					degrees: doctorForm.degrees, 
+					discount_rate: doctorForm.discount_rate, 
+					image_url: doctorForm.image_url, 
+					consultation_fee: doctorForm.consultation_fee, 
+					timing: doctorForm.timing, 
+					home_services: doctorForm.home_services 
+				}) 
 			});
 			setShowAddDoctor(false);
-			setDoctorForm({ name: '', specialization: '', degrees: '', discount_rate: 50, image_url: '', consultation_fee: '', timing: '', home_services: false });
+			setDoctorForm({ name: '', email: '', specialization: '', degrees: '', discount_rate: 50, image_url: '', consultation_fee: '', timing: '', home_services: false });
 			setDoctorImagePreview('');
 			setDoctorImage(null);
 			loadData();
@@ -4650,13 +4660,25 @@ export default function DashboardAdmin() {
 						<h3 className="text-2xl font-bold text-gray-900 mb-6">Add New Doctor</h3>
 						<div className="space-y-3">
 							<div>
-								<label className="block text-sm font-medium mb-1">Name</label>
+								<label className="block text-sm font-medium mb-1">Name *</label>
 								<input 
 									className="w-full border p-2 rounded"
 									value={doctorForm.name}
 									onChange={e => setDoctorForm({...doctorForm, name: e.target.value})}
 									placeholder="Dr. Ahmed Khan"
+									required
 								/>
+							</div>
+							<div>
+								<label className="block text-sm font-medium mb-1">Email (for login access)</label>
+								<input 
+									type="email"
+									className="w-full border p-2 rounded"
+									value={doctorForm.email || ''}
+									onChange={e => setDoctorForm({...doctorForm, email: e.target.value})}
+									placeholder="doctor@hospital.com"
+								/>
+								<p className="text-xs text-gray-500 mt-1">Optional: Creates user account for doctor login</p>
 							</div>
 							<div>
 								<label className="block text-sm font-medium mb-1">Specialization</label>
@@ -4729,7 +4751,7 @@ export default function DashboardAdmin() {
 							<button 
 								onClick={() => {
 									setShowAddDoctor(false);
-									setDoctorForm({ name: '', specialization: '', degrees: '', discount_rate: 50, image_url: '', consultation_fee: '', timing: '', home_services: false });
+									setDoctorForm({ name: '', email: '', specialization: '', degrees: '', discount_rate: 50, image_url: '', consultation_fee: '', timing: '', home_services: false });
 									setDoctorImagePreview('');
 									setDoctorImage(null);
 								}}
@@ -4751,7 +4773,7 @@ export default function DashboardAdmin() {
 							<button
 								onClick={() => {
 									setShowEditDoctor(null);
-									setDoctorForm({ name: '', specialization: '', degrees: '', discount_rate: 50, image_url: '', consultation_fee: '', timing: '', home_services: false });
+									setDoctorForm({ name: '', email: '', specialization: '', degrees: '', discount_rate: 50, image_url: '', consultation_fee: '', timing: '', home_services: false });
 									setDoctorImagePreview('');
 									setDoctorImage(null);
 								}}
@@ -4858,7 +4880,7 @@ export default function DashboardAdmin() {
 							<button 
 								onClick={() => {
 									setShowEditDoctor(null);
-									setDoctorForm({ name: '', specialization: '', degrees: '', discount_rate: 50, image_url: '', consultation_fee: '', timing: '', home_services: false });
+									setDoctorForm({ name: '', email: '', specialization: '', degrees: '', discount_rate: 50, image_url: '', consultation_fee: '', timing: '', home_services: false });
 									setDoctorImagePreview('');
 									setDoctorImage(null);
 								}}

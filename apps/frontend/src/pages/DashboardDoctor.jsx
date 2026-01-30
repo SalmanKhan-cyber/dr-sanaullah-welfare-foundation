@@ -245,7 +245,7 @@ export default function DashboardDoctor() {
 				
 				{/* Welcome Card */}
 				<div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg shadow mb-6">
-					<h2 className="text-2xl font-semibold">Welcome, {profileForm.name || 'Doctor'}!</h2>
+					<h2 className="text-2xl font-semibold">Welcome, {doctor?.name || profileForm.name || 'Doctor'}!</h2>
 					<p className="text-gray-600 mt-2">Manage your profile and professional information</p>
 				</div>
 
