@@ -19,11 +19,12 @@ CHECK (role IN ('patient', 'donor', 'admin', 'lab', 'student', 'teacher', 'pharm
 
 -- Step 4: Verify the fix
 SELECT 
-    table_name, 
-    row_level_security 
-FROM information_schema.tables 
-WHERE table_schema = 'public' 
-AND table_name IN ('users', 'labs', 'lab_users');
+    schemaname,
+    tablename,
+    rowsecurity 
+FROM pg_tables 
+WHERE schemaname = 'public' 
+AND tablename IN ('users', 'labs', 'lab_users');
 
 SELECT constraint_name, check_clause 
 FROM information_schema.check_constraints 
