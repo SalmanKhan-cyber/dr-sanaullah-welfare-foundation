@@ -55,6 +55,12 @@ router.post('/', async (req, res) => {
 			passport_number: donation.passport_number
 		});
 		
+		// Store receipt HTML in database for easy access
+		await supabaseAdmin
+			.from('donations')
+			.update({ receipt_url: `data:text/html;charset=utf-8,${encodeURIComponent(receiptHTML)}` })
+			.eq('id', donation.id);
+		
 		// In production: convert HTML to PDF and upload to 'receipts' bucket
 		// const pdfBuffer = await generateReceiptPDF(donation);
 		// const receiptPath = `${donorId}/${donation.id}.pdf`;
