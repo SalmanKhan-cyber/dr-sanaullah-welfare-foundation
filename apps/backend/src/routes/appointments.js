@@ -229,7 +229,7 @@ router.post('/', async (req, res) => {
 				final_fee: finalFee,
 				status: 'pending'
 			})
-			.select('*, doctors(name, specialization)')
+			.select('*, doctors(name, specialization, user_id)')
 			.single();
 		
 		if (error) return res.status(400).json({ error: error.message });
