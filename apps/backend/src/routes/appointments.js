@@ -320,18 +320,30 @@ router.post('/', async (req, res) => {
 			console.log('📄 Generating appointment sheet for appointment:', data.id);
 			
 			// Get complete patient data
-			const { data: completePatient } = await supabaseAdmin
+			const { data: completePatient, error: patientError } = await supabaseAdmin
 				.from('patients')
 				.select('*')
 				.eq('user_id', userId)
 				.single();
 			
+			if (patientError) {
+				console.error('❌ Error fetching patient data:', patientError);
+				throw patientError;
+			}
+			
 			// Get complete doctor data
-			const { data: completeDoctor } = await supabaseAdmin
+			const { data: completeDoctor, error: doctorError } = await supabaseAdmin
 				.from('doctors')
 				.select('*')
 				.eq('id', doctor_id)
 				.single();
+			
+			if (doctorError) {
+				console.error('❌ Error fetching doctor data:', doctorError);
+				throw doctorError;
+			}
+			
+			console.log('✅ Patient data:', completePatient?.name, 'Doctor data:', completeDoctor?.name);
 			
 			// Prepare appointment data for appointment sheet
 			const appointmentSheetData = {
@@ -351,23 +363,38 @@ router.post('/', async (req, res) => {
 				}
 			};
 			
+			console.log('📄 Generating PDF with data:', {
+				patient: appointmentSheetData.patient.name,
+				doctor: appointmentSheetData.doctor.name,
+				date: appointmentSheetData.appointment.date,
+				time: appointmentSheetData.appointment.time
+			});
+			
 			// Generate appointment sheet PDF
 			const appointmentSheetBuffer = await generateAppointmentSheetPDF(appointmentSheetData);
+			console.log('✅ PDF generated successfully, size:', appointmentSheetBuffer.length, 'bytes');
 			
 			// Generate filename
 			const appointmentSheetFileName = generateAppointmentSheetFileName(appointmentSheetData);
+			console.log('📝 Generated filename:', appointmentSheetFileName);
 			
 			// Upload to storage
 			const uploadResult = await uploadFile('appointment-sheets', appointmentSheetBuffer, appointmentSheetFileName, 'application/pdf');
 			const appointmentSheetUrl = uploadResult.url;
+			console.log('✅ File uploaded successfully:', appointmentSheetUrl);
 			
 			// Update appointment with appointment sheet URL
-			const { data: updatedAppointment } = await supabaseAdmin
+			const { data: updatedAppointment, error: updateError } = await supabaseAdmin
 				.from('appointments')
 				.update({ appointment_sheet_url: appointmentSheetUrl })
 				.eq('id', data.id)
 				.select('*, doctors(name, specialization)')
 				.single();
+			
+			if (updateError) {
+				console.error('❌ Error updating appointment with sheet URL:', updateError);
+				throw updateError;
+			}
 			
 			console.log('✅ Appointment sheet generated and uploaded:', appointmentSheetUrl);
 			
@@ -378,6 +405,10 @@ router.post('/', async (req, res) => {
 			});
 		} catch (appointmentSheetError) {
 			console.error('❌ Error generating appointment sheet:', appointmentSheetError);
+			console.error('❌ Full error details:', {
+				message: appointmentSheetError.message,
+				stack: appointmentSheetError.stack
+			});
 			// Don't fail the appointment booking if appointment sheet generation fails
 			// Return the appointment without the sheet URL
 			res.json({ 
