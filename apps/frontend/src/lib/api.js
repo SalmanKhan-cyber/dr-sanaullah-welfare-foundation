@@ -1,9 +1,7 @@
 import { supabase } from './supabase';
 
-// API URL configuration
-const API_URL = import.meta.env.MODE === 'production' 
-	? 'https://3oqcvri8.up.railway.app'  // Railway backend URL
-	: 'http://localhost:4000'; // Local backend for development
+// API URL configuration - Force localhost for debugging
+const API_URL = 'http://localhost:4000';
 
 // Debug log to verify API URL
 console.log('🔍 API URL being used:', API_URL);
@@ -132,11 +130,19 @@ export async function apiRequest(endpoint, options = {}, retryCount = 0) {
 				body = JSON.stringify(body);
 			}
 			
+			console.log('🔍 Making request to:', `${API_URL}${endpoint}`);
+			console.log('🔍 Request method:', options.method || 'GET');
+			console.log('🔍 Request headers:', headers);
+			console.log('🔍 Request body:', body);
+			
 			const response = await fetch(`${API_URL}${endpoint}`, {
 				...options,
 				body,
 				headers
 			});
+			
+			console.log('🔍 Response status:', response.status);
+			console.log('🔍 Response ok:', response.ok);
 			
 			// If 401 Unauthorized, try refreshing token once
 			if (response.status === 401 && retryCount < maxRetries) {
