@@ -46,7 +46,7 @@ router.post('/generate-appointment-sheet/:appointmentId', authMiddleware, async 
 		const { data: completePatient } = await supabaseAdmin
 			.from('patients')
 			.select('*')
-			.eq('user_id', appointment.patients.user_id)
+			.or(`id.eq.${appointment.patient_id},user_id.eq.${appointment.patient_id}`)
 			.single();
 		
 		// Get complete doctor data

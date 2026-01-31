@@ -323,7 +323,7 @@ router.post('/', async (req, res) => {
 			const { data: completePatient, error: patientError } = await supabaseAdmin
 				.from('patients')
 				.select('*')
-				.eq('user_id', userId)
+				.or(`id.eq.${data.patient_id},user_id.eq.${data.patient_id}`)
 				.single();
 			
 			if (patientError) {
