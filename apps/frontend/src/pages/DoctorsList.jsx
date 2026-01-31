@@ -193,7 +193,11 @@ export default function DoctorsList() {
 					cnic: patientProfileForm.cnic,
 					history: patientProfileForm.history || null
 				};
+				console.log('🔍 Frontend Debug - Sending patient_details:', requestBody.patient_details);
+				console.log('🔍 Frontend Debug - Name value:', patientProfileForm.name);
 			}
+
+			console.log('🔍 Frontend Debug - Complete request body:', requestBody);
 
 			const response = await apiRequest('/api/appointments/guest', {
 				method: 'POST',

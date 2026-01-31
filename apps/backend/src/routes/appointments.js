@@ -112,7 +112,10 @@ router.post('/guest', async (req, res) => {
 		}
 		
 		// Simplified validation - just need basic info for appointment sheet
-		if (!patient_details || !patient_details.name) {
+		console.log('🔍 Debug - patient_details:', patient_details);
+		console.log('🔍 Debug - patient_details.name:', patient_details?.name);
+		
+		if (!patient_details || !patient_details.name || patient_details.name.trim() === '') {
 			return res.status(400).json({ error: 'Patient name is required for appointment sheet generation' });
 		}
 		
