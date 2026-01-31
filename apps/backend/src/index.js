@@ -35,7 +35,7 @@ import jobsRoutes from './routes/jobs.js';
 import homeServicesRoutes from './routes/homeServices.js';
 
 const app = express();
-const port = process.env.PORT || 4000;
+const port = parseInt(process.env.PORT) || 4000;
 
 // Trust proxy for Cloudflare and other reverse proxies
 app.set("trust proxy", true);
