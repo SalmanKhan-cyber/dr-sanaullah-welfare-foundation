@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 
 // Cache Buster: 2025-01-13T00:20:00Z - FINAL FIX
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://drsanaullahwelfarefoundation.com';
 
 // Debug log to verify API URL
 console.log('🔍 API URL being used:', API_URL);
