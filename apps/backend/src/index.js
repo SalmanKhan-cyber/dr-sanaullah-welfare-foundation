@@ -35,7 +35,22 @@ import jobsRoutes from './routes/jobs.js';
 import homeServicesRoutes from './routes/homeServices.js';
 
 const app = express();
-const PORT = Number(process.env.PORT) || 4000;
+const PORT = (() => {
+	const port = process.env.PORT;
+	console.log('🔍 Raw PORT from env:', port, 'Type:', typeof port);
+	if (typeof port === 'string') {
+		const parsed = parseInt(port, 10);
+		console.log('🔍 Parsed PORT:', parsed, 'IsNaN:', isNaN(parsed), 'Valid range:', !isNaN(parsed) && parsed > 0 && parsed <= 65535);
+		if (!isNaN(parsed) && parsed > 0 && parsed <= 65535) {
+			return parsed;
+		}
+	}
+	if (typeof port === 'number' && port > 0 && port <= 65535) {
+		return port;
+	}
+	console.log('🔍 Using fallback PORT: 4000');
+	return 4000;
+})();
 
 // Trust proxy for Cloudflare and other reverse proxies
 app.set("trust proxy", true);
