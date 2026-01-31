@@ -966,6 +966,15 @@ app.use('/api/admin/specialties', authMiddleware, rbac(['admin']), specialtiesRo
 app.use('/api/admin/conditions', authMiddleware, rbac(['admin']), conditionsRoutes);
 app.use('/api/admin/surgery-categories', authMiddleware, rbac(['admin']), surgeryCategoriesRoutes);
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 // Error handling middleware
 app.use((err, _req, res, _next) => {
 	console.error('Error:', err.message || err);
