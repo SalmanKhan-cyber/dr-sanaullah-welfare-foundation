@@ -7,7 +7,6 @@ export default function DashboardDoctor() {
 	const { verified, checking } = useVerification('doctor');
 	const [activeTab, setActiveTab] = useState('profile');
 	const [doctor, setDoctor] = useState(null);
-	const [notifications, setNotifications] = useState([]);
 	const [appointments, setAppointments] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [changeTimeModal, setChangeTimeModal] = useState(null);
@@ -79,9 +78,6 @@ export default function DashboardDoctor() {
 						timing: ''
 					});
 				}
-			} else if (activeTab === 'notifications') {
-				const res = await apiRequest('/api/notifications');
-				setNotifications(res.notifications || []);
 			} else if (activeTab === 'appointments') {
 				try {
 					console.log('Loading doctor appointments...');
@@ -253,7 +249,7 @@ export default function DashboardDoctor() {
 				<div className="bg-white rounded-lg shadow mb-6">
 					<div className="border-b border-gray-200">
 						<nav className="flex space-x-8 px-6 overflow-x-auto" aria-label="Tabs">
-							{['profile', 'appointments', 'notifications'].map(tab => (
+							{['profile', 'appointments'].map(tab => (
 								<button
 									key={tab}
 									onClick={() => setActiveTab(tab)}
@@ -554,29 +550,6 @@ export default function DashboardDoctor() {
 							</div>
 						)}
 
-						{activeTab === 'notifications' && (
-							<div>
-								<h2 className="text-xl font-semibold mb-4">Notifications</h2>
-								{loading ? (
-									<p>Loading...</p>
-								) : notifications.length === 0 ? (
-									<div className="bg-gray-50 border border-gray-200 rounded p-4 text-center">
-										<p className="text-gray-600">No notifications</p>
-									</div>
-								) : (
-									<div className="space-y-3">
-										{notifications.map(notif => (
-											<div key={notif.id} className="bg-white border rounded-lg p-4">
-												<p className="text-gray-800">{notif.message}</p>
-												<p className="text-xs text-gray-500 mt-1">
-													{new Date(notif.created_at).toLocaleString()}
-												</p>
-											</div>
-										))}
-									</div>
-								)}
-							</div>
-						)}
 					</div>
 				</div>
 			</div>
