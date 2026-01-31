@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest, clearCache } from '../lib/api';
+import { supabase } from '../lib/supabase';
+import { openAppointmentSheetWindow } from '../services/appointmentSheetService';
 
 export default function DashboardPatient() {
 	const [activeTab, setActiveTab] = useState('profile');
@@ -569,19 +571,35 @@ export default function DashboardPatient() {
 														</div>
 													)}
 													<div className="mt-3 space-y-2">
+														{/* Always show appointment sheet button */}
+														<button
+															onClick={() => {
+																// Get patient data
+																const patientData = profile;
+																const appointmentData = apt;
+																const doctorData = apt.doctors || {};
+																
+																// Open appointment sheet
+																openAppointmentSheetWindow(appointmentData, doctorData, patientData);
+															}}
+															className="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition-all flex items-center justify-center gap-2 text-sm"
+														>
+															<span>📄</span>
+															<span>Appointment Sheet</span>
+														</button>
 														{apt.appointment_sheet_url && (
 															<button
 																onClick={() => window.open(`/api/appointments/${apt.id}/appointment-sheet/pdf`, '_blank')}
-																className="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition-all flex items-center justify-center gap-2 text-sm"
+																className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-sm"
 															>
-																<span>📄</span>
-																<span>Appointment Sheet</span>
+																<span>�</span>
+																<span>Download PDF</span>
 															</button>
 														)}
 														{apt.patient_file_url && (
 															<button
 																onClick={() => window.open(`/api/appointments/${apt.id}/patient-file/pdf`, '_blank')}
-																className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-sm"
+																className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-purple-700 transition-all flex items-center justify-center gap-2 text-sm"
 															>
 																<span>📋</span>
 																<span>Patient File</span>
@@ -869,23 +887,41 @@ export default function DashboardPatient() {
 									// Show success message
 									alert('Appointment booked successfully!');
 									
-									// Show appointment sheet download if available
-									if (response.appointment_sheet_url) {
-										const downloadWindow = window.open('', '_blank');
-										downloadWindow.document.write(`
-											<html>
-												<head><title>Appointment Sheet Download</title></head>
-												<body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-													<h2>📄 Appointment Sheet Generated</h2>
-													<p>Your appointment sheet has been generated successfully!</p>
-													<a href="${response.appointment_sheet_url}" download style="background: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 20px;">
-														Download Appointment Sheet
-													</a>
-													<p style="color: #6b7280; font-size: 14px;">If the download doesn't start automatically, click the button above.</p>
-												</body>
-											</html>
-										`);
-										downloadWindow.document.close();
+									// Generate and show appointment sheet immediately
+									try {
+										// Get patient profile data
+										const patientData = profile;
+										
+										// Prepare appointment data
+										const appointmentData = {
+											...response.appointment,
+											appointment_date: appointmentForm.appointment_date,
+											appointment_time: appointmentForm.appointment_time,
+											reason: appointmentForm.reason || null
+										};
+										
+										// Open appointment sheet in new window
+										openAppointmentSheetWindow(appointmentData, selectedDoctor, patientData);
+									} catch (sheetError) {
+										console.error('Error generating appointment sheet:', sheetError);
+										// Fallback to old method if available
+										if (response.appointment_sheet_url) {
+											const downloadWindow = window.open('', '_blank');
+											downloadWindow.document.write(`
+												<html>
+													<head><title>Appointment Sheet Download</title></head>
+													<body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+														<h2>📄 Appointment Sheet Generated</h2>
+														<p>Your appointment sheet has been generated successfully!</p>
+														<a href="${response.appointment_sheet_url}" download style="background: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 20px;">
+															Download Appointment Sheet
+														</a>
+														<p style="color: #6b7280; font-size: 14px;">If the download doesn't start automatically, click the button above.</p>
+													</body>
+												</html>
+											`);
+											downloadWindow.document.close();
+										}
 									}
 									
 									setSelectedDoctor(null);
