@@ -28,6 +28,7 @@ export default function InClinic() {
 	});
 	const [bookingLoading, setBookingLoading] = useState(false);
 	const [showProfileForm, setShowProfileForm] = useState(false);
+	const [bookingStep, setBookingStep] = useState('details'); // 'details' or 'datetime'
 
 	useEffect(() => {
 		fetchDoctors();
@@ -105,10 +106,13 @@ export default function InClinic() {
 				setHasPatientProfile(false);
 				setShowProfileForm(true);
 			}
+			// Always start with details step, regardless of whether profile exists
+			setBookingStep('details');
 		} catch (err) {
 			console.error('❌ Error checking patient profile:', err);
 			setHasPatientProfile(false);
 			setShowProfileForm(true);
+			setBookingStep('details'); // Start with details step
 		} finally {
 			setCheckingProfile(false);
 		}
@@ -162,6 +166,7 @@ export default function InClinic() {
 		setSelectedDoctor(doctor);
 		setAppointmentForm({ appointment_date: '', appointment_time: '', reason: '' });
 		setShowProfileForm(false);
+		setBookingStep('details'); // Start with details step
 	}
 
 	async function handlePatientProfileSubmit(e) {
@@ -174,28 +179,40 @@ export default function InClinic() {
 
 		setBookingLoading(true);
 		try {
-			await apiRequest('/api/patients/profile', {
-				method: 'POST',
-				body: JSON.stringify({
-					name: patientProfileForm.name,
-					phone: patientProfileForm.phone,
-					age: parseInt(patientProfileForm.age),
-					gender: patientProfileForm.gender,
-					cnic: patientProfileForm.cnic,
-					history: patientProfileForm.history || null
-				})
-			});
-			
-			setHasPatientProfile(true);
-			setShowProfileForm(false);
-			
-			if (appointmentForm.appointment_date && appointmentForm.appointment_time) {
-				await handleBookingSubmit(null);
+			// If patient doesn't have a profile, create one
+			if (!hasPatientProfile) {
+				await apiRequest('/api/patients/profile', {
+					method: 'POST',
+					body: JSON.stringify({
+						name: patientProfileForm.name,
+						phone: patientProfileForm.phone,
+						age: parseInt(patientProfileForm.age),
+						gender: patientProfileForm.gender,
+						cnic: patientProfileForm.cnic,
+						history: patientProfileForm.history || null
+					})
+				});
+				setHasPatientProfile(true);
 			} else {
-				setBookingLoading(false);
+				// Update existing profile
+				await apiRequest('/api/patients/profile', {
+					method: 'PUT',
+					body: JSON.stringify({
+						name: patientProfileForm.name,
+						phone: patientProfileForm.phone,
+						age: parseInt(patientProfileForm.age),
+						gender: patientProfileForm.gender,
+						cnic: patientProfileForm.cnic,
+						history: patientProfileForm.history || null
+					})
+				});
 			}
+			
+			setShowProfileForm(false);
+			setBookingStep('datetime'); // Move to date/time selection
+			setBookingLoading(false);
 		} catch (err) {
-			alert(err.message || 'Failed to create profile');
+			alert(err.message || 'Failed to save profile');
 			setBookingLoading(false);
 		}
 	}
@@ -416,12 +433,19 @@ export default function InClinic() {
 									<div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-brand border-t-transparent mb-4"></div>
 									<p className="text-gray-600">Checking profile...</p>
 								</div>
-							) : !hasPatientProfile || showProfileForm ? (
+							) : bookingStep === 'details' ? (
 								<>
 									<div className="text-center mb-6">
-										<div className="text-5xl mb-3">📋</div>
-										<h3 className="text-xl font-bold text-gray-900">Complete Your Profile</h3>
-										<p className="text-gray-600 text-sm mt-1">Please provide your information to book an appointment</p>
+										<div className="text-5xl mb-3">�</div>
+										<h3 className="text-xl font-bold text-gray-900">
+											{hasPatientProfile ? 'Confirm Your Details' : 'Patient Details'}
+										</h3>
+										<p className="text-gray-600 text-sm mt-1">
+											{hasPatientProfile 
+												? 'Please confirm your information before selecting appointment time' 
+												: 'Please provide your information before selecting appointment time'
+											}
+										</p>
 									</div>
 
 									<form onSubmit={handlePatientProfileSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
@@ -520,7 +544,7 @@ export default function InClinic() {
 												disabled={bookingLoading}
 												className="flex-1 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark disabled:opacity-50"
 											>
-												{bookingLoading ? 'Saving...' : 'Save & Continue Booking'}
+												{bookingLoading ? 'Saving...' : (hasPatientProfile ? 'Confirm & Continue' : 'Continue to Time Selection')}
 											</button>
 											<button
 												type="button"
@@ -535,17 +559,15 @@ export default function InClinic() {
 										</div>
 									</form>
 								</>
-							) : (
+							) : bookingStep === 'datetime' ? (
 								<>
 									<div className="text-center mb-6">
-										<h3 className="text-xl font-bold text-gray-900">{selectedDoctor.name}</h3>
-										<p className="text-gray-600">{selectedDoctor.specialization}</p>
-										{selectedDoctor.degrees && (
-											<p className="text-sm text-gray-500 mt-1">{selectedDoctor.degrees}</p>
-										)}
+										<div className="text-5xl mb-3">📅</div>
+										<h3 className="text-xl font-bold text-gray-900">Select Appointment Time</h3>
+										<p className="text-gray-600 text-sm mt-1">Choose your preferred date and time</p>
 									</div>
 
-									<form onSubmit={handleBookingSubmit} className="space-y-4">
+									<form onSubmit={handleBookingSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
 										<div>
 											<label className="block text-sm font-medium mb-1">Appointment Date *</label>
 											<input
@@ -554,8 +576,8 @@ export default function InClinic() {
 												value={appointmentForm.appointment_date}
 												onChange={e => setAppointmentForm({...appointmentForm, appointment_date: e.target.value})}
 												onClick={(e) => e.stopPropagation()}
-												required
 												min={new Date().toISOString().split('T')[0]}
+												required
 											/>
 										</div>
 
@@ -579,63 +601,31 @@ export default function InClinic() {
 												value={appointmentForm.reason}
 												onChange={e => setAppointmentForm({...appointmentForm, reason: e.target.value})}
 												onClick={(e) => e.stopPropagation()}
-												placeholder="Brief description of your symptoms or concern..."
+												placeholder="Brief description of your health concern..."
+												disabled={bookingLoading}
 											/>
 										</div>
 
-										<div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-											<p className="text-sm text-gray-700 mb-2">
-												<span className="font-semibold">Location:</span> Partner Clinic, Near You
-											</p>
-											{selectedDoctor.consultation_fee && (
-												<>
-													<div className="flex justify-between items-center">
-														<span className="text-gray-700">Consultation Fee:</span>
-														<span className="font-semibold">PKR {selectedDoctor.consultation_fee}</span>
-													</div>
-													{selectedDoctor.discount_rate > 0 && (
-														<div className="flex justify-between items-center mt-2">
-															<span className="text-gray-700">Discount ({selectedDoctor.discount_rate}%):</span>
-															<span className="text-green-600 font-semibold">
-																- PKR {((selectedDoctor.consultation_fee * selectedDoctor.discount_rate) / 100).toFixed(2)}
-															</span>
-														</div>
-													)}
-													<div className="flex justify-between items-center mt-2 pt-2 border-t border-blue-300">
-														<span className="font-bold text-gray-900">Final Fee:</span>
-														<span className="font-bold text-brand text-lg">
-															PKR {(
-																selectedDoctor.consultation_fee - 
-																((selectedDoctor.consultation_fee * (selectedDoctor.discount_rate || 0)) / 100)
-															).toFixed(2)}
-														</span>
-													</div>
-												</>
-											)}
-										</div>
-
 										<div className="flex gap-3 mt-6">
+											<button
+												type="button"
+												onClick={() => setBookingStep('details')}
+												className="flex-1 bg-gray-200 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300"
+											>
+												Back
+											</button>
 											<button
 												type="submit"
 												disabled={bookingLoading}
 												className="flex-1 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark disabled:opacity-50"
 											>
-												{bookingLoading ? 'Booking...' : 'Confirm Booking'}
-											</button>
-											<button
-												type="button"
-												onClick={() => {
-													setSelectedDoctor(null);
-													setAppointmentForm({ appointment_date: '', appointment_time: '', reason: '' });
-												}}
-												className="flex-1 bg-gray-200 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300"
-											>
-												Cancel
+												{bookingLoading ? 'Booking...' : 'Book Appointment'}
 											</button>
 										</div>
 									</form>
 								</>
-							)}
+							) : null // This should never happen with our current flow
+						}
 						</div>
 					</div>
 				</div>
