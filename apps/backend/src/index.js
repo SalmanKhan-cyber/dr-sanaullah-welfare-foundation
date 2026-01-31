@@ -968,6 +968,7 @@ app.use('/api/courses', authMiddleware, rbac(['student','teacher','admin']), cou
 app.use('/api/pharmacy', authMiddleware, pharmacyRoutes);
 app.use('/api/prescriptions', authMiddleware, rbac(['patient','admin','pharmacy']), prescriptionRoutes);
 app.use('/api/certificates', authMiddleware, rbac(['student','teacher','admin']), certificateRoutes);
+app.use('/api/doctors/public', doctorRoutes); // Public doctors endpoint (must be before authenticated routes)
 app.use('/api/doctors', authMiddleware, rbac(['patient','admin','doctor']), doctorRoutes);
 app.use('/api/appointments', authMiddleware, rbac(['patient','doctor','admin']), appointmentsRoutes);
 app.use('/api/appointments/guest', appointmentsRoutes); // Public guest booking endpoint

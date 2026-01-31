@@ -71,12 +71,13 @@ export default function DoctorsList() {
 		(async () => {
 			setLoading(true);
 			try {
-				let query = supabase.from('doctors').select('*').order('name', { ascending: true });
+				const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/doctors/public`);
+				const data = await response.json();
+				let doctors = data.doctors || [];
 				if (specialty) {
-					query = query.ilike('specialization', `%${specialty}%`);
+					doctors = doctors.filter(d => d.specialization && d.specialization.toLowerCase().includes(specialty.toLowerCase()));
 				}
-				const { data } = await query;
-				setDoctors(data || []);
+				setDoctors(doctors);
 			} finally {
 				setLoading(false);
 			}

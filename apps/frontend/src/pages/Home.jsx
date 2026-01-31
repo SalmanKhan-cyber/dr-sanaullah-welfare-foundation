@@ -136,15 +136,9 @@ export default function Home() {
 
 	async function fetchDoctors() {
 		try {
-			const { data, error } = await supabase
-				.from('doctors')
-				.select('*')
-				.order('name', { ascending: true })
-				.limit(6);
-			
-			if (!error) {
-				setDoctors(data || []);
-			}
+			const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/doctors/public`);
+			const data = await response.json();
+			setDoctors(data.doctors || []);
 		} catch (err) {
 			console.error('Error fetching doctors:', err);
 		} finally {
