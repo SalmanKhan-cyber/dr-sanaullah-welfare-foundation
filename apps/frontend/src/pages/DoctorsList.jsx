@@ -65,8 +65,9 @@ export default function DoctorsList() {
 			} else {
 				setHasPatientProfile(false);
 				setShowProfileForm(true); // Auto-show profile form if missing
-				setBookingStep('details'); // Start with details step
 			}
+			// Always start with details step, regardless of whether profile exists
+			setBookingStep('details');
 		} catch (err) {
 			// Profile doesn't exist
 			setHasPatientProfile(false);
@@ -158,23 +159,36 @@ export default function DoctorsList() {
 
 		setBookingLoading(true);
 		try {
-			// Create patient profile using public endpoint (it will get userId from auth token)
-			await apiRequest('/api/patients/profile', {
-				method: 'POST',
-				body: JSON.stringify({
-					age: parseInt(patientProfileForm.age),
-					gender: patientProfileForm.gender,
-					cnic: patientProfileForm.cnic,
-					history: patientProfileForm.history || null
-				})
-			});
+			// If patient doesn't have a profile, create one
+			if (!hasPatientProfile) {
+				await apiRequest('/api/patients/profile', {
+					method: 'POST',
+					body: JSON.stringify({
+						age: parseInt(patientProfileForm.age),
+						gender: patientProfileForm.gender,
+						cnic: patientProfileForm.cnic,
+						history: patientProfileForm.history || null
+					})
+				});
+				setHasPatientProfile(true);
+			} else {
+				// Update existing profile
+				await apiRequest('/api/patients/profile', {
+					method: 'PUT',
+					body: JSON.stringify({
+						age: parseInt(patientProfileForm.age),
+						gender: patientProfileForm.gender,
+						cnic: patientProfileForm.cnic,
+						history: patientProfileForm.history || null
+					})
+				});
+			}
 			
-			setHasPatientProfile(true);
 			setShowProfileForm(false);
 			setBookingStep('datetime'); // Move to date/time selection
 			setBookingLoading(false);
 		} catch (err) {
-			alert(err.message || 'Failed to create profile');
+			alert(err.message || 'Failed to save profile');
 			setBookingLoading(false);
 		}
 	}
@@ -443,12 +457,19 @@ export default function DoctorsList() {
 									<div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-brand border-t-transparent mb-4"></div>
 									<p className="text-gray-600">Checking profile...</p>
 								</div>
-							) : bookingStep === 'details' && (!hasPatientProfile || showProfileForm) ? (
+							) : bookingStep === 'details' ? (
 								<>
 									<div className="text-center mb-6">
-										<div className="text-5xl mb-3">�</div>
-										<h3 className="text-xl font-bold text-gray-900">Patient Details</h3>
-										<p className="text-gray-600 text-sm mt-1">Please provide your information before selecting appointment time</p>
+										<div className="text-5xl mb-3">👤</div>
+										<h3 className="text-xl font-bold text-gray-900">
+											{hasPatientProfile ? 'Confirm Your Details' : 'Patient Details'}
+										</h3>
+										<p className="text-gray-600 text-sm mt-1">
+											{hasPatientProfile 
+												? 'Please confirm your information before selecting appointment time' 
+												: 'Please provide your information before selecting appointment time'
+											}
+										</p>
 									</div>
 
 									<form onSubmit={handlePatientProfileSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
@@ -519,7 +540,7 @@ export default function DoctorsList() {
 												disabled={bookingLoading}
 												className="flex-1 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark disabled:opacity-50"
 											>
-												{bookingLoading ? 'Saving...' : 'Continue to Time Selection'}
+												{bookingLoading ? 'Saving...' : (hasPatientProfile ? 'Confirm & Continue' : 'Continue to Time Selection')}
 											</button>
 											<button
 												type="button"
