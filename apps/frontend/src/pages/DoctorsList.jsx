@@ -133,9 +133,9 @@ export default function DoctorsList() {
 	async function handlePatientProfileSubmit(e) {
 		e.preventDefault();
 		
-		// Validate required fields
-		if (!patientProfileForm.name || !patientProfileForm.phone || !patientProfileForm.age || !patientProfileForm.gender || !patientProfileForm.cnic) {
-			alert('Please fill in all required fields (Name, Phone, Age, Gender, CNIC)');
+		// Validate required fields (only name, age, gender required for appointment sheet)
+		if (!patientProfileForm.name || !patientProfileForm.age || !patientProfileForm.gender) {
+			alert('Please fill in all required fields (Name, Age, Gender)');
 			return;
 		}
 
@@ -441,14 +441,13 @@ export default function DoctorsList() {
 												/>
 											</div>
 											<div>
-												<label className="block text-sm font-medium mb-1">Phone *</label>
+												<label className="block text-sm font-medium mb-1">Phone (Optional)</label>
 												<input
 													type="tel"
 													className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-brand"
 													value={patientProfileForm.phone}
 													onChange={e => setPatientProfileForm({...patientProfileForm, phone: e.target.value})}
 													onClick={(e) => e.stopPropagation()}
-													required
 													disabled={bookingLoading}
 												/>
 											</div>
@@ -484,7 +483,7 @@ export default function DoctorsList() {
 										</div>
 
 										<div>
-											<label className="block text-sm font-medium mb-1">CNIC Number *</label>
+											<label className="block text-sm font-medium mb-1">CNIC Number (Optional)</label>
 											<input
 												type="text"
 												className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-brand"
@@ -492,8 +491,6 @@ export default function DoctorsList() {
 												value={patientProfileForm.cnic}
 												onChange={e => setPatientProfileForm({...patientProfileForm, cnic: e.target.value})}
 												onClick={(e) => e.stopPropagation()}
-												required
-												pattern="[0-9]{5}-[0-9]{7}-[0-9]{1}"
 												disabled={bookingLoading}
 											/>
 											<p className="text-xs text-gray-500 mt-1">Format: 12345-6789012-3</p>
