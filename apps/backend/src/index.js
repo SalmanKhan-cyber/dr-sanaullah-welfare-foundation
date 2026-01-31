@@ -33,7 +33,6 @@ import surgeryCategoriesRoutes from './routes/surgeryCategories.js';
 import surgeryBookingsRoutes from './routes/surgeryBookings.js';
 import jobsRoutes from './routes/jobs.js';
 import homeServicesRoutes from './routes/homeServices.js';
-import debugRoutes from './routes/debug.js';
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -549,7 +548,7 @@ app.post('/api/doctors/upload-image', upload.single('file'), async (req, res, ne
 
 		// Upload using service role (bypasses RLS)
 		const { error: uploadError } = await supabaseAdmin.storage
-			.from('doctor-images')
+			.from('certificates')
 			.upload(path, req.file.buffer, { 
 				contentType: req.file.mimetype,
 				upsert: false 
@@ -557,12 +556,21 @@ app.post('/api/doctors/upload-image', upload.single('file'), async (req, res, ne
 
 		if (uploadError) throw new Error(uploadError.message);
 
-		// Get signed URL (since bucket is private)
-		const { data: signedUrlData } = await supabaseAdmin.storage
-			.from('doctor-images')
-			.createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year expiry
+		// Get public URL (works if bucket is public)
+		const { data: publicUrlData } = supabaseAdmin.storage
+			.from('certificates')
+			.getPublicUrl(path);
 
-		const imageUrl = signedUrlData?.signedUrl;
+		// If public URL doesn't work, create a long-lived signed URL (1 year)
+		let imageUrl = publicUrlData?.publicUrl;
+		if (!imageUrl) {
+			const { data: signedData, error: signedError } = await supabaseAdmin.storage
+				.from('certificates')
+				.createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
+			
+			if (signedError) throw new Error(signedError.message);
+			imageUrl = signedData?.signedUrl;
+		}
 
 		res.json({ 
 			url: imageUrl,
@@ -957,7 +965,6 @@ app.use('/api/prescriptions', authMiddleware, rbac(['patient','admin','pharmacy'
 app.use('/api/certificates', authMiddleware, rbac(['student','teacher','admin']), certificateRoutes);
 app.use('/api/doctors', authMiddleware, rbac(['patient','admin','doctor']), doctorRoutes);
 app.use('/api/appointments', authMiddleware, rbac(['patient','doctor','admin']), appointmentsRoutes);
-app.use('/api/debug', authMiddleware, rbac(['patient','doctor','admin']), debugRoutes);
 app.use('/api/notifications', authMiddleware, rbac(['patient','donor','admin','lab','student','teacher','pharmacy','doctor']), notificationRoutes);
 // Teacher routes
 app.use('/api/teacher', authMiddleware, rbac(['teacher','admin']), teacherRoutes);
@@ -965,15 +972,6 @@ app.use('/api/teacher', authMiddleware, rbac(['teacher','admin']), teacherRoutes
 app.use('/api/admin/specialties', authMiddleware, rbac(['admin']), specialtiesRoutes);
 app.use('/api/admin/conditions', authMiddleware, rbac(['admin']), conditionsRoutes);
 app.use('/api/admin/surgery-categories', authMiddleware, rbac(['admin']), surgeryCategoriesRoutes);
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
 
 // Error handling middleware
 app.use((err, _req, res, _next) => {

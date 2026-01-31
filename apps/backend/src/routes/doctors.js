@@ -3,7 +3,6 @@ import multer from 'multer';
 import { supabaseAdmin } from '../lib/supabase.js';
 import { uploadFile } from '../lib/storage.js';
 import { authMiddleware } from '../middleware/auth.js';
-import { randomUUID } from 'crypto';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB limit
@@ -113,83 +112,10 @@ router.put('/me', async (req, res) => {
 // Add doctor (admin only)
 router.post('/', async (req, res) => {
 	try {
-		const { name, specialization, discount_rate, degrees, image_url, consultation_fee, timing, email } = req.body || {};
+		const { name, specialization, discount_rate, degrees, image_url, consultation_fee, timing } = req.body || {};
 		if (!name) return res.status(400).json({ error: 'Name required' });
 		
-		let userId = null;
-		
-		// If email is provided, find or create user account
-		if (email) {
-			// Check if user already exists
-			const { data: existingUser, error: userCheckError } = await supabaseAdmin
-				.from('users')
-				.select('id, role, verified')
-				.eq('email', email)
-				.single();
-			
-			if (userCheckError && userCheckError.code !== 'PGRST116') {
-				console.error('❌ Error checking existing user:', userCheckError);
-				return res.status(400).json({ error: 'Error checking user: ' + userCheckError.message });
-			}
-			
-			if (existingUser) {
-				userId = existingUser.id;
-				console.log(`📋 Found existing user for doctor: ${email} (role: ${existingUser.role})`);
-				
-				// If user exists but is not a doctor, update their role
-				if (existingUser.role !== 'doctor') {
-					const { error: updateError } = await supabaseAdmin
-						.from('users')
-						.update({ role: 'doctor', verified: true })
-						.eq('id', userId);
-					
-					if (updateError) {
-						console.error('❌ Failed to update user role:', updateError);
-						return res.status(400).json({ error: 'Failed to update user role: ' + updateError.message });
-					}
-					console.log(`✅ Updated user role to doctor for: ${email}`);
-				}
-				
-				// Check if doctor profile already exists for this user
-				const { data: existingDoctor } = await supabaseAdmin
-					.from('doctors')
-					.select('id')
-					.eq('user_id', userId)
-					.single();
-				
-				if (existingDoctor) {
-					return res.status(400).json({ 
-						error: 'Doctor profile already exists for this email. Use Edit Doctor instead.',
-						existingDoctorId: existingDoctor.id
-					});
-				}
-			} else {
-				// Create new user account with explicit ID
-				const newUserId = randomUUID();
-				const { data: newUser, error: userError } = await supabaseAdmin
-					.from('users')
-					.insert({
-						id: newUserId,
-						name: name,
-						email: email,
-						role: 'doctor',
-						verified: true // Admin-created doctors are auto-verified
-					})
-					.select('id')
-					.single();
-				
-				if (userError) {
-					console.error('❌ Failed to create user for doctor:', userError);
-					return res.status(400).json({ error: 'Failed to create user account: ' + userError.message });
-				}
-				
-				userId = newUser.id;
-				console.log(`✅ Created new user account for doctor: ${email} (ID: ${userId})`);
-			}
-		}
-		
 		const doctorData = {
-			user_id: userId, // Link to user account if available
 			name,
 			specialization: specialization || null,
 			discount_rate: discount_rate || 50,
@@ -206,13 +132,7 @@ router.post('/', async (req, res) => {
 			.single();
 		
 		if (error) return res.status(400).json({ error: error.message });
-		
-		console.log(`✅ Created doctor profile: ${name} (user_id: ${userId})`);
-		res.json({ 
-			doctor: data,
-			user_created: !!userId,
-			message: userId ? 'Doctor profile and user account created successfully' : 'Doctor profile created (no user account linked)'
-		});
+		res.json({ doctor: data });
 	} catch (err) {
 		res.status(500).json({ error: err.message });
 	}
@@ -267,7 +187,7 @@ router.post('/upload-image', authMiddleware, upload.single('file'), async (req, 
 
 		// Upload using service role (bypasses RLS)
 		const { error: uploadError } = await supabaseAdmin.storage
-			.from('doctor-images')
+			.from('certificates')
 			.upload(path, req.file.buffer, { 
 				contentType: req.file.mimetype,
 				upsert: false 
@@ -275,12 +195,21 @@ router.post('/upload-image', authMiddleware, upload.single('file'), async (req, 
 
 		if (uploadError) throw new Error(uploadError.message);
 
-		// Get signed URL (since bucket is private)
-		const { data: signedUrlData } = await supabaseAdmin.storage
-			.from('doctor-images')
-			.createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year expiry
+		// Get public URL (works if bucket is public)
+		const { data: publicUrlData } = supabaseAdmin.storage
+			.from('certificates')
+			.getPublicUrl(path);
 
-		const imageUrl = signedUrlData?.signedUrl;
+		// If public URL doesn't work, create a long-lived signed URL (1 year)
+		let imageUrl = publicUrlData?.publicUrl;
+		if (!imageUrl) {
+			const { data: signedData, error: signedError } = await supabaseAdmin.storage
+				.from('certificates')
+				.createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
+			
+			if (signedError) throw new Error(signedError.message);
+			imageUrl = signedData?.signedUrl;
+		}
 
 		res.json({ 
 			url: imageUrl,

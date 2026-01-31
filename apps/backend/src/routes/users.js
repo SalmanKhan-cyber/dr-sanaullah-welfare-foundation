@@ -74,54 +74,39 @@ router.post('/approve', async (req, res) => {
 		
 		// If user is a doctor, ensure they have a doctor profile
 		if (userData?.role === 'doctor') {
-			const { data: existingDoctor, error: doctorCheckError } = await supabaseAdmin
+			const { data: existingDoctor } = await supabaseAdmin
 				.from('doctors')
 				.select('id')
 				.eq('user_id', userId)
 				.single();
 			
-			if (doctorCheckError && doctorCheckError.code !== 'PGRST116') {
-				console.error('❌ Error checking existing doctor profile:', doctorCheckError);
-				// Don't fail approval - continue with user approval
-			}
-			
 			if (!existingDoctor) {
 				// Get user's name to create basic profile
-				const { data: userInfo, error: userError } = await supabaseAdmin
+				const { data: userInfo } = await supabaseAdmin
 					.from('users')
 					.select('name, email')
 					.eq('id', userId)
 					.single();
 				
-				if (userError) {
-					console.error('❌ Failed to get user info for doctor profile:', userError);
+				// Create a minimal doctor profile so they can access the dashboard
+				const { error: doctorError } = await supabaseAdmin
+					.from('doctors')
+					.insert({
+						user_id: userId,
+						name: userInfo?.name || 'Doctor',
+						specialization: null,
+						degrees: null,
+						consultation_fee: 0,
+						discount_rate: 50,
+						timing: null
+					});
+				
+				if (doctorError) {
+					console.error('⚠️ Failed to create doctor profile:', doctorError);
+					// Don't fail approval - user can create profile later
 				} else {
-					// Create a minimal doctor profile so they can access the dashboard
-					const { error: doctorError } = await supabaseAdmin
-						.from('doctors')
-						.insert({
-							user_id: userId,
-							name: userInfo?.name || 'Doctor',
-							specialization: null,
-							degrees: null,
-							consultation_fee: 0,
-							discount_rate: 50,
-							timing: null
-						});
-					
-					if (doctorError) {
-						console.error('❌ Failed to create doctor profile:', doctorError);
-						console.error('Doctor profile data:', {
-							user_id: userId,
-							name: userInfo?.name || 'Doctor'
-						});
-						// Don't fail approval - user can create profile later
-					} else {
-						console.log(`✅ Created doctor profile for user ${userId} (${userInfo?.name})`);
-					}
+					console.log(`✅ Created doctor profile for user ${userId}`);
 				}
-			} else {
-				console.log(`📋 Doctor profile already exists for user ${userId}`);
 			}
 		}
 		

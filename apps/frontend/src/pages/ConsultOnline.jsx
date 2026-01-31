@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { apiRequest } from '../lib/api';
-import { openAppointmentSheetWindow } from '../services/appointmentSheetService';
 
 export default function ConsultOnline() {
 	const navigate = useNavigate();
@@ -203,7 +202,7 @@ export default function ConsultOnline() {
 
 		setBookingLoading(true);
 		try {
-			const response = await apiRequest('/api/appointments', {
+			await apiRequest('/api/appointments', {
 				method: 'POST',
 				body: JSON.stringify({
 					doctor_id: selectedDoctor.id,
@@ -213,50 +212,7 @@ export default function ConsultOnline() {
 				})
 			});
 			
-			// Show success message
 			alert('Video consultation booked successfully!');
-			
-			// Generate and show appointment sheet immediately
-			try {
-				// Get patient profile data
-				const { data: patientData } = await supabase
-					.from('patients')
-					.select('*')
-					.eq('user_id', supabase.auth.currentUser?.id)
-					.single();
-				
-				// Prepare appointment data
-				const appointmentData = {
-					...response.appointment,
-					appointment_date: appointmentForm.appointment_date,
-					appointment_time: appointmentForm.appointment_time,
-					reason: appointmentForm.reason || null
-				};
-				
-				// Open appointment sheet in new window
-				openAppointmentSheetWindow(appointmentData, selectedDoctor, patientData);
-			} catch (sheetError) {
-				console.error('Error generating appointment sheet:', sheetError);
-				// Fallback to old method if available
-				if (response.appointment_sheet_url) {
-					const downloadWindow = window.open('', '_blank');
-					downloadWindow.document.write(`
-						<html>
-							<head><title>Appointment Sheet Download</title></head>
-							<body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-								<h2>📄 Appointment Sheet Generated</h2>
-								<p>Your appointment sheet has been generated successfully!</p>
-								<a href="${response.appointment_sheet_url}" download style="background: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 20px;">
-									Download Appointment Sheet
-								</a>
-								<p style="color: #6b7280; font-size: 14px;">If the download doesn't start automatically, click the button above.</p>
-							</body>
-						</html>
-					`);
-					downloadWindow.document.close();
-				}
-			}
-			
 			setSelectedDoctor(null);
 			setAppointmentForm({ appointment_date: '', appointment_time: '', reason: '' });
 			setShowProfileForm(false);

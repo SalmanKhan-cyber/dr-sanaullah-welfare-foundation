@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../supabase';
+import AppointmentSheetModal from '../components/AppointmentSheetModal';
 import { Link } from 'react-router-dom';
 import { apiRequest, clearCache } from '../lib/api';
-import { supabase } from '../lib/supabase';
-import { openAppointmentSheetWindow } from '../services/appointmentSheetService';
 
 export default function DashboardPatient() {
 	const [activeTab, setActiveTab] = useState('profile');
@@ -11,6 +11,8 @@ export default function DashboardPatient() {
 	const [reports, setReports] = useState([]);
 	const [prescriptions, setPrescriptions] = useState([]);
 	const [notifications, setNotifications] = useState([]);
+	const [showAppointmentSheet, setShowAppointmentSheet] = useState(false);
+	const [appointmentSheetData, setAppointmentSheetData] = useState(null);
 	const [appointments, setAppointments] = useState([]);
 	const [testBookings, setTestBookings] = useState([]);
 	const [loading, setLoading] = useState(false);
@@ -570,42 +572,6 @@ export default function DashboardPatient() {
 															<p className="text-brand font-bold text-xl">PKR {parseFloat(apt.final_fee).toFixed(2)}</p>
 														</div>
 													)}
-													<div className="mt-3 space-y-2">
-														{/* Always show appointment sheet button */}
-														<button
-															onClick={() => {
-																// Get patient data
-																const patientData = profile;
-																const appointmentData = apt;
-																const doctorData = apt.doctors || {};
-																
-																// Open appointment sheet
-																openAppointmentSheetWindow(appointmentData, doctorData, patientData);
-															}}
-															className="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition-all flex items-center justify-center gap-2 text-sm"
-														>
-															<span>📄</span>
-															<span>Appointment Sheet</span>
-														</button>
-														{apt.appointment_sheet_url && (
-															<button
-																onClick={() => window.open(`/api/appointments/${apt.id}/appointment-sheet/pdf`, '_blank')}
-																className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-sm"
-															>
-																<span>�</span>
-																<span>Download PDF</span>
-															</button>
-														)}
-														{apt.patient_file_url && (
-															<button
-																onClick={() => window.open(`/api/appointments/${apt.id}/patient-file/pdf`, '_blank')}
-																className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-purple-700 transition-all flex items-center justify-center gap-2 text-sm"
-															>
-																<span>📋</span>
-																<span>Patient File</span>
-															</button>
-														)}
-													</div>
 												</div>
 											</div>
 										</div>
@@ -874,7 +840,7 @@ export default function DashboardPatient() {
 								setBookingLoading(true);
 								try {
 									// Try booking first
-									const response = await apiRequest('/api/appointments', {
+									await apiRequest('/api/appointments', {
 										method: 'POST',
 										body: JSON.stringify({
 											doctor_id: selectedDoctor.id,
@@ -884,45 +850,27 @@ export default function DashboardPatient() {
 										})
 									});
 									
-									// Show success message
-									alert('Appointment booked successfully!');
-									
-									// Generate and show appointment sheet immediately
-									try {
-										// Get patient profile data
-										const patientData = profile;
-										
-										// Prepare appointment data
-										const appointmentData = {
-											...response.appointment,
-											appointment_date: appointmentForm.appointment_date,
-											appointment_time: appointmentForm.appointment_time,
-											reason: appointmentForm.reason || null
-										};
-										
-										// Open appointment sheet in new window
-										openAppointmentSheetWindow(appointmentData, selectedDoctor, patientData);
-									} catch (sheetError) {
-										console.error('Error generating appointment sheet:', sheetError);
-										// Fallback to old method if available
-										if (response.appointment_sheet_url) {
-											const downloadWindow = window.open('', '_blank');
-											downloadWindow.document.write(`
-												<html>
-													<head><title>Appointment Sheet Download</title></head>
-													<body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-														<h2>📄 Appointment Sheet Generated</h2>
-														<p>Your appointment sheet has been generated successfully!</p>
-														<a href="${response.appointment_sheet_url}" download style="background: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 20px;">
-															Download Appointment Sheet
-														</a>
-														<p style="color: #6b7280; font-size: 14px;">If the download doesn't start automatically, click the button above.</p>
-													</body>
-												</html>
-											`);
-											downloadWindow.document.close();
+									// Prepare appointment sheet data
+									const sheetData = {
+										patientDetails: {
+											name: profile?.name || 'N/A',
+											age: profile?.age || '',
+											gender: profile?.gender || '',
+											phone: profile?.phone || '',
+											id: profile?.user_id || ''
+										},
+										doctorDetails: {
+											name: selectedDoctor.name || 'N/A',
+											specialization: selectedDoctor.specialization || 'N/A'
+										},
+										appointmentDetails: {
+											date: appointmentForm.appointment_date,
+											time: appointmentForm.appointment_time
 										}
-									}
+									};
+									
+									setAppointmentSheetData(sheetData);
+									setShowAppointmentSheet(true);
 									
 									setSelectedDoctor(null);
 									setAppointmentForm({ appointment_date: '', appointment_time: '', reason: '' });
@@ -1371,6 +1319,15 @@ export default function DashboardPatient() {
 					</div>
 				</div>
 			)}
+			
+			{/* Appointment Sheet Modal */}
+			<AppointmentSheetModal
+				isOpen={showAppointmentSheet}
+				onClose={() => setShowAppointmentSheet(false)}
+				patientDetails={appointmentSheetData?.patientDetails}
+				doctorDetails={appointmentSheetData?.doctorDetails}
+				appointmentDetails={appointmentSheetData?.appointmentDetails}
+			/>
 		</div>
 	);
 }

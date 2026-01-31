@@ -7,6 +7,7 @@ export default function DashboardDoctor() {
 	const { verified, checking } = useVerification('doctor');
 	const [activeTab, setActiveTab] = useState('profile');
 	const [doctor, setDoctor] = useState(null);
+	const [notifications, setNotifications] = useState([]);
 	const [appointments, setAppointments] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [changeTimeModal, setChangeTimeModal] = useState(null);
@@ -78,6 +79,9 @@ export default function DashboardDoctor() {
 						timing: ''
 					});
 				}
+			} else if (activeTab === 'notifications') {
+				const res = await apiRequest('/api/notifications');
+				setNotifications(res.notifications || []);
 			} else if (activeTab === 'appointments') {
 				try {
 					console.log('Loading doctor appointments...');
@@ -241,7 +245,7 @@ export default function DashboardDoctor() {
 				
 				{/* Welcome Card */}
 				<div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg shadow mb-6">
-					<h2 className="text-2xl font-semibold">Welcome, {doctor?.name || profileForm.name || 'Doctor'}!</h2>
+					<h2 className="text-2xl font-semibold">Welcome, {profileForm.name || 'Doctor'}!</h2>
 					<p className="text-gray-600 mt-2">Manage your profile and professional information</p>
 				</div>
 
@@ -249,7 +253,7 @@ export default function DashboardDoctor() {
 				<div className="bg-white rounded-lg shadow mb-6">
 					<div className="border-b border-gray-200">
 						<nav className="flex space-x-8 px-6 overflow-x-auto" aria-label="Tabs">
-							{['profile', 'appointments'].map(tab => (
+							{['profile', 'appointments', 'notifications'].map(tab => (
 								<button
 									key={tab}
 									onClick={() => setActiveTab(tab)}
@@ -498,14 +502,6 @@ export default function DashboardDoctor() {
 																>
 																	⏰ Change Time
 																</button>
-																{apt.appointment_sheet_url && (
-																	<button
-																		onClick={() => window.open(`/api/appointments/${apt.id}/appointment-sheet/pdf`, '_blank')}
-																		className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
-																	>
-																		📄 Appointment Sheet
-																	</button>
-																)}
 															</div>
 														)}
 														{apt.status === 'confirmed' && (
@@ -526,14 +522,6 @@ export default function DashboardDoctor() {
 																>
 																	⏰ Change Time
 																</button>
-																{apt.appointment_sheet_url && (
-																	<button
-																		onClick={() => window.open(`/api/appointments/${apt.id}/appointment-sheet/pdf`, '_blank')}
-																		className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
-																	>
-																		📄 Appointment Sheet
-																	</button>
-																)}
 																<button
 																	onClick={async () => {
 																		try {
@@ -555,14 +543,6 @@ export default function DashboardDoctor() {
 																>
 																	✓ Mark Complete
 																</button>
-																{apt.appointment_sheet_url && (
-																	<button
-																		onClick={() => window.open(`/api/appointments/${apt.id}/appointment-sheet/pdf`, '_blank')}
-																		className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
-																	>
-																		📄 Appointment Sheet
-																	</button>
-																)}
 															</div>
 														)}
 													</div>
@@ -574,6 +554,29 @@ export default function DashboardDoctor() {
 							</div>
 						)}
 
+						{activeTab === 'notifications' && (
+							<div>
+								<h2 className="text-xl font-semibold mb-4">Notifications</h2>
+								{loading ? (
+									<p>Loading...</p>
+								) : notifications.length === 0 ? (
+									<div className="bg-gray-50 border border-gray-200 rounded p-4 text-center">
+										<p className="text-gray-600">No notifications</p>
+									</div>
+								) : (
+									<div className="space-y-3">
+										{notifications.map(notif => (
+											<div key={notif.id} className="bg-white border rounded-lg p-4">
+												<p className="text-gray-800">{notif.message}</p>
+												<p className="text-xs text-gray-500 mt-1">
+													{new Date(notif.created_at).toLocaleString()}
+												</p>
+											</div>
+										))}
+									</div>
+								)}
+							</div>
+						)}
 					</div>
 				</div>
 			</div>
