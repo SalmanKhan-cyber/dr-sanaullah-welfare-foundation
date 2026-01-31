@@ -28,7 +28,7 @@ import VideoCall from './pages/VideoCall';
 import Jobs from './pages/Jobs';
 import JobDetails from './pages/JobDetails';
 import HomeServices from './pages/HomeServices';
-import AppointmentSheetPage from './pages/AppointmentSheetPage';
+import QuickBooking from './pages/QuickBooking';
 
 export default function App() {
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -78,6 +78,18 @@ export default function App() {
 								}
 							>
 								Contact
+							</NavLink>
+							<NavLink 
+								to="/quick-booking" 
+								className={({isActive}) => 
+									`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 relative ${
+										isActive 
+											? 'text-brand bg-brand/10' 
+											: 'text-gray-700 hover:text-brand hover:bg-gray-50'
+									}`
+								}
+							>
+								📋 Quick Booking
 							</NavLink>
 							<NavLink 
 								to="/donation" 
@@ -189,6 +201,19 @@ export default function App() {
 									Contact
 								</NavLink>
 								<NavLink 
+									to="/quick-booking" 
+									onClick={() => setMobileMenuOpen(false)}
+									className={({isActive}) => 
+										`px-4 py-3 rounded-lg text-sm font-semibold transition-all ${
+											isActive 
+												? 'text-brand bg-brand/10' 
+												: 'text-gray-700 hover:text-brand hover:bg-gray-50'
+										}`
+									}
+								>
+									📋 Quick Booking
+								</NavLink>
+								<NavLink 
 									to="/donation" 
 									onClick={() => setMobileMenuOpen(false)}
 									className={({isActive}) => 
@@ -247,6 +272,7 @@ export default function App() {
 				<Route path="/in-clinic" element={<InClinic />} />
 				<Route path="/courses" element={<Courses />} />
 				<Route path="/blood-request" element={<BloodRequest />} />
+				<Route path="/quick-booking" element={<QuickBooking />} />
 				<Route path="/jobs" element={<Jobs />} />
 				<Route path="/jobs/:id" element={<JobDetails />} />
 				<Route path="/home-services" element={<HomeServices />} />
@@ -259,7 +285,6 @@ export default function App() {
 				<Route path="/dashboard/doctor" element={<DashboardDoctor />} />
 				<Route path="/dashboard/blood-bank" element={<DashboardBloodBank />} />
 				<Route path="/dashboard/lab" element={<DashboardLab />} />
-				<Route path="/appointment-sheet/:appointmentId" element={<AppointmentSheetPage />} />
 				<Route path="/pending-approval" element={<PendingApproval />} />
 				<Route path="/video-call/:appointmentId" element={<VideoCall />} />
 			</Routes>
