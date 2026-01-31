@@ -35,7 +35,7 @@ import jobsRoutes from './routes/jobs.js';
 import homeServicesRoutes from './routes/homeServices.js';
 
 const app = express();
-const port = parseInt(process.env.RAILWAY_PORT || process.env.PORT || '4000', 10);
+const PORT = Number(process.env.PORT) || 4000;
 
 // Trust proxy for Cloudflare and other reverse proxies
 app.set("trust proxy", true);
@@ -993,9 +993,6 @@ app.use((err, _req, res, _next) => {
 	});
 });
 
-app.listen(port, '0.0.0.0', () => {
-	console.log(`Backend running on port ${port}`);
-	if (process.env.NODE_ENV !== 'production') {
-		console.log(`Local access: http://localhost:${port}`);
-	}
+app.listen(PORT, () => {
+	console.log(`Server running on port ${PORT}`);
 });
