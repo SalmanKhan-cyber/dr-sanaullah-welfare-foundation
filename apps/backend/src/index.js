@@ -33,6 +33,7 @@ import surgeryCategoriesRoutes from './routes/surgeryCategories.js';
 import surgeryBookingsRoutes from './routes/surgeryBookings.js';
 import jobsRoutes from './routes/jobs.js';
 import homeServicesRoutes from './routes/homeServices.js';
+import debugRoutes from './routes/debug.js';
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -956,6 +957,7 @@ app.use('/api/prescriptions', authMiddleware, rbac(['patient','admin','pharmacy'
 app.use('/api/certificates', authMiddleware, rbac(['student','teacher','admin']), certificateRoutes);
 app.use('/api/doctors', authMiddleware, rbac(['patient','admin','doctor']), doctorRoutes);
 app.use('/api/appointments', authMiddleware, rbac(['patient','doctor','admin']), appointmentsRoutes);
+app.use('/api/debug', authMiddleware, rbac(['patient','doctor','admin']), debugRoutes);
 app.use('/api/notifications', authMiddleware, rbac(['patient','donor','admin','lab','student','teacher','pharmacy','doctor']), notificationRoutes);
 // Teacher routes
 app.use('/api/teacher', authMiddleware, rbac(['teacher','admin']), teacherRoutes);
