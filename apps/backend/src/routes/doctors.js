@@ -3,6 +3,7 @@ import multer from 'multer';
 import { supabaseAdmin } from '../lib/supabase.js';
 import { uploadFile } from '../lib/storage.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { randomUUID } from 'crypto';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB limit
@@ -120,20 +121,55 @@ router.post('/', async (req, res) => {
 		// If email is provided, find or create user account
 		if (email) {
 			// Check if user already exists
-			const { data: existingUser } = await supabaseAdmin
+			const { data: existingUser, error: userCheckError } = await supabaseAdmin
 				.from('users')
-				.select('id')
+				.select('id, role, verified')
 				.eq('email', email)
 				.single();
 			
+			if (userCheckError && userCheckError.code !== 'PGRST116') {
+				console.error('❌ Error checking existing user:', userCheckError);
+				return res.status(400).json({ error: 'Error checking user: ' + userCheckError.message });
+			}
+			
 			if (existingUser) {
 				userId = existingUser.id;
-				console.log(`📋 Found existing user for doctor: ${email}`);
+				console.log(`📋 Found existing user for doctor: ${email} (role: ${existingUser.role})`);
+				
+				// If user exists but is not a doctor, update their role
+				if (existingUser.role !== 'doctor') {
+					const { error: updateError } = await supabaseAdmin
+						.from('users')
+						.update({ role: 'doctor', verified: true })
+						.eq('id', userId);
+					
+					if (updateError) {
+						console.error('❌ Failed to update user role:', updateError);
+						return res.status(400).json({ error: 'Failed to update user role: ' + updateError.message });
+					}
+					console.log(`✅ Updated user role to doctor for: ${email}`);
+				}
+				
+				// Check if doctor profile already exists for this user
+				const { data: existingDoctor } = await supabaseAdmin
+					.from('doctors')
+					.select('id')
+					.eq('user_id', userId)
+					.single();
+				
+				if (existingDoctor) {
+					return res.status(400).json({ 
+						error: 'Doctor profile already exists for this email. Use Edit Doctor instead.',
+						existingDoctorId: existingDoctor.id
+					});
+				}
 			} else {
-				// Create new user account
+				// Create new user account with explicit ID
+				const newUserId = randomUUID();
 				const { data: newUser, error: userError } = await supabaseAdmin
 					.from('users')
 					.insert({
+						id: newUserId,
 						name: name,
 						email: email,
 						role: 'doctor',
@@ -148,7 +184,7 @@ router.post('/', async (req, res) => {
 				}
 				
 				userId = newUser.id;
-				console.log(`✅ Created new user account for doctor: ${email}`);
+				console.log(`✅ Created new user account for doctor: ${email} (ID: ${userId})`);
 			}
 		}
 		
