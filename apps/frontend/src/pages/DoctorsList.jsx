@@ -31,6 +31,7 @@ export default function DoctorsList() {
 	});
 	const [bookingLoading, setBookingLoading] = useState(false);
 	const [showProfileForm, setShowProfileForm] = useState(false);
+	const [bookingStep, setBookingStep] = useState('details'); // 'details' or 'datetime'
 
 	// Check authentication and patient profile
 	useEffect(() => {
@@ -64,11 +65,13 @@ export default function DoctorsList() {
 			} else {
 				setHasPatientProfile(false);
 				setShowProfileForm(true); // Auto-show profile form if missing
+				setBookingStep('details'); // Start with details step
 			}
 		} catch (err) {
 			// Profile doesn't exist
 			setHasPatientProfile(false);
 			setShowProfileForm(true); // Auto-show profile form if missing
+			setBookingStep('details'); // Start with details step
 		} finally {
 			setCheckingProfile(false);
 		}
@@ -141,6 +144,7 @@ export default function DoctorsList() {
 		setSelectedDoctor(doctor);
 		setAppointmentForm({ appointment_date: '', appointment_time: '', reason: '' });
 		setShowProfileForm(false);
+		setBookingStep('details'); // Start with details step
 	}
 
 	async function handlePatientProfileSubmit(e) {
@@ -167,15 +171,8 @@ export default function DoctorsList() {
 			
 			setHasPatientProfile(true);
 			setShowProfileForm(false);
-			
-			// Check if appointment details are filled, if yes, proceed with booking
-			if (appointmentForm.appointment_date && appointmentForm.appointment_time) {
-				// Now proceed with booking automatically
-				await handleBookingSubmit(null);
-			} else {
-				// Show booking form
-				setBookingLoading(false);
-			}
+			setBookingStep('datetime'); // Move to date/time selection
+			setBookingLoading(false);
 		} catch (err) {
 			alert(err.message || 'Failed to create profile');
 			setBookingLoading(false);
@@ -186,21 +183,21 @@ export default function DoctorsList() {
 		if (e) e.preventDefault();
 		if (!selectedDoctor) return;
 
-		// Validate required fields
 		if (!appointmentForm.appointment_date || !appointmentForm.appointment_time) {
 			alert('Please fill in appointment date and time');
 			return;
 		}
 
-		// If profile doesn't exist, show profile form first
+		// Check if patient has profile, if not show details form
 		if (!hasPatientProfile) {
 			setShowProfileForm(true);
+			setBookingStep('details');
 			return;
 		}
 
 		setBookingLoading(true);
 		try {
-			await apiRequest('/api/appointments', {
+			const response = await apiRequest('/api/appointments', {
 				method: 'POST',
 				body: JSON.stringify({
 					doctor_id: selectedDoctor.id,
@@ -210,10 +207,21 @@ export default function DoctorsList() {
 				})
 			});
 			
-			alert('Appointment booked successfully!');
+			// Handle appointment sheet download if available
+			if (response.appointment_sheet_url) {
+				const link = document.createElement('a');
+				link.href = response.appointment_sheet_url;
+				link.download = response.appointment_sheet_filename || 'appointment-sheet.pdf';
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+			}
+
+			alert('Appointment booked successfully! Your appointment sheet has been downloaded.');
 			setSelectedDoctor(null);
 			setAppointmentForm({ appointment_date: '', appointment_time: '', reason: '' });
 			setShowProfileForm(false);
+			setBookingStep('details');
 			// Optionally redirect to patient dashboard
 			navigate('/dashboard/patient');
 		} catch (err) {
@@ -435,12 +443,12 @@ export default function DoctorsList() {
 									<div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-brand border-t-transparent mb-4"></div>
 									<p className="text-gray-600">Checking profile...</p>
 								</div>
-							) : !hasPatientProfile || showProfileForm ? (
+							) : bookingStep === 'details' && (!hasPatientProfile || showProfileForm) ? (
 								<>
 									<div className="text-center mb-6">
-										<div className="text-5xl mb-3">📋</div>
-										<h3 className="text-xl font-bold text-gray-900">Complete Your Profile</h3>
-										<p className="text-gray-600 text-sm mt-1">Please provide your information to book an appointment</p>
+										<div className="text-5xl mb-3">�</div>
+										<h3 className="text-xl font-bold text-gray-900">Patient Details</h3>
+										<p className="text-gray-600 text-sm mt-1">Please provide your information before selecting appointment time</p>
 									</div>
 
 									<form onSubmit={handlePatientProfileSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
@@ -511,7 +519,7 @@ export default function DoctorsList() {
 												disabled={bookingLoading}
 												className="flex-1 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark disabled:opacity-50"
 											>
-												{bookingLoading ? 'Saving...' : 'Save & Continue Booking'}
+												{bookingLoading ? 'Saving...' : 'Continue to Time Selection'}
 											</button>
 											<button
 												type="button"
@@ -522,6 +530,71 @@ export default function DoctorsList() {
 												className="flex-1 bg-gray-200 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300"
 											>
 												Cancel
+											</button>
+										</div>
+									</form>
+								</>
+							) : bookingStep === 'datetime' ? (
+								<>
+									<div className="text-center mb-6">
+										<div className="text-5xl mb-3">📅</div>
+										<h3 className="text-xl font-bold text-gray-900">Select Appointment Time</h3>
+										<p className="text-gray-600 text-sm mt-1">Choose your preferred date and time</p>
+									</div>
+
+									<form onSubmit={handleBookingSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
+										<div>
+											<label className="block text-sm font-medium mb-1">Appointment Date *</label>
+											<input
+												type="date"
+												className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-brand"
+												value={appointmentForm.appointment_date}
+												onChange={e => setAppointmentForm({...appointmentForm, appointment_date: e.target.value})}
+												onClick={(e) => e.stopPropagation()}
+												min={new Date().toISOString().split('T')[0]}
+												required
+											/>
+										</div>
+
+										<div>
+											<label className="block text-sm font-medium mb-1">Appointment Time *</label>
+											<input
+												type="time"
+												className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-brand"
+												value={appointmentForm.appointment_time}
+												onChange={e => setAppointmentForm({...appointmentForm, appointment_time: e.target.value})}
+												onClick={(e) => e.stopPropagation()}
+												required
+											/>
+										</div>
+
+										<div>
+											<label className="block text-sm font-medium mb-1">Reason for Visit</label>
+											<textarea
+												className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-brand resize-none"
+												rows="3"
+												value={appointmentForm.reason}
+												onChange={e => setAppointmentForm({...appointmentForm, reason: e.target.value})}
+												onClick={(e) => e.stopPropagation()}
+												placeholder="Brief description of your health concern..."
+												disabled={bookingLoading}
+											/>
+										</div>
+
+										<div className="flex gap-3 mt-6">
+											<button
+												type="button"
+												onClick={() => setBookingStep('details')}
+												className="flex-1 bg-gray-200 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300"
+											>
+												Back
+											</button>
+											<button
+												type="submit"
+												disabled={bookingLoading}
+												className="flex-1 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark disabled:opacity-50"
+											>
+												{bookingLoading ? 'Booking...' : 'Book Appointment'}
 											</button>
 										</div>
 									</form>
