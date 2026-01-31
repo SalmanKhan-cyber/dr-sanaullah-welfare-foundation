@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest, clearCache } from '../lib/api';
 import { supabase } from '../lib/supabase';
-import AppointmentSheetModal from '../components/AppointmentSheetModal';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 const DEFAULT_MEDICINE_FORM = {
@@ -89,8 +88,6 @@ export default function DashboardAdmin() {
 	const [appointmentForm, setAppointmentForm] = useState({ doctor_id: '', appointment_date: '', appointment_time: '', reason: '' });
 	const [bookingLoading, setBookingLoading] = useState(false);
 	const [doctorSearchQuery, setDoctorSearchQuery] = useState('');
-	const [showAppointmentSheet, setShowAppointmentSheet] = useState(false);
-	const [appointmentSheetData, setAppointmentSheetData] = useState(null);
 	const [doctorImage, setDoctorImage] = useState(null);
 	const [doctorImagePreview, setDoctorImagePreview] = useState('');
 	const [uploadingDoctorImage, setUploadingDoctorImage] = useState(false);
@@ -1093,31 +1090,7 @@ export default function DashboardAdmin() {
 				})
 			});
 			
-			// Find the selected doctor details
-			const selectedDoctor = doctors.find(d => d.id === appointmentForm.doctor_id);
-			
-			// Prepare appointment sheet data
-			const sheetData = {
-				patientDetails: {
-					name: showBookAppointment.users?.name || 'N/A',
-					age: showBookAppointment.age || '',
-					gender: showBookAppointment.gender || '',
-					phone: showBookAppointment.phone || '',
-					id: showBookAppointment.user_id || ''
-				},
-				doctorDetails: {
-					name: selectedDoctor?.name || 'N/A',
-					specialization: selectedDoctor?.specialization || 'N/A'
-				},
-				appointmentDetails: {
-					date: appointmentForm.appointment_date,
-					time: appointmentForm.appointment_time
-				}
-			};
-			
-			setAppointmentSheetData(sheetData);
-			setShowAppointmentSheet(true);
-			
+			alert('Appointment booked successfully!');
 			setShowBookAppointment(null);
 			setAppointmentForm({ doctor_id: '', appointment_date: '', appointment_time: '', reason: '' });
 			loadData();
@@ -7444,15 +7417,7 @@ export default function DashboardAdmin() {
 					</div>
 				</div>
 			)}
-			
-			{/* Appointment Sheet Modal */}
-			<AppointmentSheetModal
-				isOpen={showAppointmentSheet}
-				onClose={() => setShowAppointmentSheet(false)}
-				patientDetails={appointmentSheetData?.patientDetails}
-				doctorDetails={appointmentSheetData?.doctorDetails}
-				appointmentDetails={appointmentSheetData?.appointmentDetails}
-			/>
+			</div>
 		</div>
 	);
 }

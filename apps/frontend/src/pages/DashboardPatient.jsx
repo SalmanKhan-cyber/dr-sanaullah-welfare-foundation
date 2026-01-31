@@ -1,6 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../supabase';
-import AppointmentSheetModal from '../components/AppointmentSheetModal';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest, clearCache } from '../lib/api';
 
@@ -11,8 +9,6 @@ export default function DashboardPatient() {
 	const [reports, setReports] = useState([]);
 	const [prescriptions, setPrescriptions] = useState([]);
 	const [notifications, setNotifications] = useState([]);
-	const [showAppointmentSheet, setShowAppointmentSheet] = useState(false);
-	const [appointmentSheetData, setAppointmentSheetData] = useState(null);
 	const [appointments, setAppointments] = useState([]);
 	const [testBookings, setTestBookings] = useState([]);
 	const [loading, setLoading] = useState(false);
@@ -849,29 +845,7 @@ export default function DashboardPatient() {
 											reason: appointmentForm.reason || null
 										})
 									});
-									
-									// Prepare appointment sheet data
-									const sheetData = {
-										patientDetails: {
-											name: profile?.name || 'N/A',
-											age: profile?.age || '',
-											gender: profile?.gender || '',
-											phone: profile?.phone || '',
-											id: profile?.user_id || ''
-										},
-										doctorDetails: {
-											name: selectedDoctor.name || 'N/A',
-											specialization: selectedDoctor.specialization || 'N/A'
-										},
-										appointmentDetails: {
-											date: appointmentForm.appointment_date,
-											time: appointmentForm.appointment_time
-										}
-									};
-									
-									setAppointmentSheetData(sheetData);
-									setShowAppointmentSheet(true);
-									
+									alert('Appointment booked successfully!');
 									setSelectedDoctor(null);
 									setAppointmentForm({ appointment_date: '', appointment_time: '', reason: '' });
 									// Clear cache and reload data, then switch to appointments tab
@@ -1319,15 +1293,6 @@ export default function DashboardPatient() {
 					</div>
 				</div>
 			)}
-			
-			{/* Appointment Sheet Modal */}
-			<AppointmentSheetModal
-				isOpen={showAppointmentSheet}
-				onClose={() => setShowAppointmentSheet(false)}
-				patientDetails={appointmentSheetData?.patientDetails}
-				doctorDetails={appointmentSheetData?.doctorDetails}
-				appointmentDetails={appointmentSheetData?.appointmentDetails}
-			/>
 		</div>
 	);
 }
