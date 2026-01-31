@@ -1,0 +1,13 @@
+{
+  "name": "dswf-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "cd apps/backend && npm start",
+    "build": "cd apps/backend && npm run build",
+    "install": "cd apps/backend && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
