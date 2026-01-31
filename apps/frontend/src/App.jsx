@@ -28,6 +28,7 @@ import VideoCall from './pages/VideoCall';
 import Jobs from './pages/Jobs';
 import JobDetails from './pages/JobDetails';
 import HomeServices from './pages/HomeServices';
+import AppointmentSheetPage from './pages/AppointmentSheetPage';
 
 export default function App() {
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -258,6 +259,7 @@ export default function App() {
 				<Route path="/dashboard/doctor" element={<DashboardDoctor />} />
 				<Route path="/dashboard/blood-bank" element={<DashboardBloodBank />} />
 				<Route path="/dashboard/lab" element={<DashboardLab />} />
+				<Route path="/appointment-sheet/:appointmentId" element={<AppointmentSheetPage />} />
 				<Route path="/pending-approval" element={<PendingApproval />} />
 				<Route path="/video-call/:appointmentId" element={<VideoCall />} />
 			</Routes>

@@ -1,6 +1,7 @@
 /**
  * Appointment Sheet Generator
  * Creates PDF appointment sheets for patients and doctors
+ * Enhanced with professional medical document design
  */
 
 import PDFDocument from 'pdfkit';
@@ -18,134 +19,91 @@ export function generateAppointmentSheetPDF(appointmentData) {
         }
       });
 
+      // Collect PDF chunks
       const chunks = [];
       doc.on('data', chunk => chunks.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
 
       const { patient, doctor, appointment } = appointmentData;
 
-      // Helper function to add text
-      const addText = (text, x, y, options = {}) => {
-        doc.fontSize(options.fontSize || 12).font(options.font || 'Helvetica');
-        if (options.bold) doc.font('Helvetica-Bold');
-        if (options.italic) doc.font('Helvetica-Oblique');
-        doc.text(text, x, y, options);
-      };
+      // Header Section with Foundation Name
+      doc.fontSize(18).font('Helvetica-Bold').text('Dr. Sanaullah Welfare Foundation', { align: 'center' });
+      doc.fontSize(12).font('Helvetica').text('Healthcare Excellence', { align: 'center' });
+      doc.moveDown();
 
-      // Header
-      doc.fillColor('#1e40af').fontSize(24).font('Helvetica-Bold').text('APPOINTMENT SHEET', 50, 50, { align: 'center' });
+      // Appointment Sheet Title
+      doc.fontSize(16).font('Helvetica-Bold').text('APPOINTMENT SHEET', { align: 'center' });
+      doc.moveDown();
+
+      // Horizontal line
+      doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+      doc.moveDown();
+
+      // Two-column layout for Patient and Doctor details
+      const patientX = 50;
+      const doctorX = 300;
+      const startY = doc.y;
+
+      // Patient Details Section (Left Column)
+      doc.fontSize(14).font('Helvetica-Bold').text('PATIENT DETAILS', patientX, startY);
+      doc.font('Helvetica').fontSize(11);
+      doc.text(`Name: ${patient?.name || 'N/A'}`, patientX, startY + 20);
+      doc.text(`Age: ${patient?.age || 'N/A'}`, patientX, startY + 35);
+      doc.text(`Gender: ${patient?.gender || 'N/A'}`, patientX, startY + 50);
+      doc.text(`Contact: ${patient?.phone || patient?.contact || 'N/A'}`, patientX, startY + 65);
+      doc.text(`Patient ID: ${patient?.id || patient?.patient_id || 'N/A'}`, patientX, startY + 80);
+
+      // Doctor Details Section (Right Column)
+      doc.fontSize(14).font('Helvetica-Bold').text('DOCTOR DETAILS', doctorX, startY);
+      doc.font('Helvetica').fontSize(11);
+      doc.text(`Name: ${doctor?.name || 'N/A'}`, doctorX, startY + 20);
+      doc.text(`Specialization: ${doctor?.specialization || 'N/A'}`, doctorX, startY + 35);
+      doc.text(`Date: ${appointment?.appointment_date || appointment?.date || 'N/A'}`, doctorX, startY + 50);
+      doc.text(`Time: ${appointment?.appointment_time || appointment?.time || 'N/A'}`, doctorX, startY + 65);
+      doc.text(`Status: ${appointment?.status || 'Scheduled'}`, doctorX, startY + 80);
+
+      // Move down after details
+      doc.moveDown(3);
+
+      // Main Body - Empty Space for Notes
+      doc.fontSize(12).font('Helvetica-Bold').text('DOCTOR NOTES, DIAGNOSIS & PRESCRIPTION:', 50, doc.y);
+      doc.moveDown();
+
+      // Draw empty space with subtle lines
+      const notesStartY = doc.y;
+      const notesHeight = 300; // Large space for notes
+      const lineSpacing = 20;
       
-      // Subtitle
-      doc.fillColor('#64748b').fontSize(14).font('Helvetica').text('Dr. Sanaullah Welfare Foundation', 50, 80, { align: 'center' });
-      
-      // Date generated
-      doc.fillColor('#64748b').fontSize(10).font('Helvetica').text(`Generated: ${new Date().toLocaleDateString()}`, 50, 100, { align: 'center' });
-
-      // Divider
-      doc.strokeColor('#e2e8f0').lineWidth(1).moveTo(50, 115).lineTo(545, 115).stroke();
-
-      // Patient Information Section
-      doc.fillColor('#1e40af').fontSize(16).font('Helvetica-Bold').text('PATIENT INFORMATION', 50, 140);
-      doc.fillColor('#374151').fontSize(12).font('Helvetica');
-      
-      let yPosition = 165;
-      addText(`Name: ${patient?.name || 'N/A'}`, 50, yPosition);
-      yPosition += 20;
-      addText(`Age: ${patient?.age || 'N/A'}`, 50, yPosition);
-      yPosition += 20;
-      addText(`Gender: ${patient?.gender || 'N/A'}`, 50, yPosition);
-      yPosition += 20;
-      addText(`Phone: ${patient?.phone || 'N/A'}`, 50, yPosition);
-      yPosition += 20;
-      addText(`Email: ${patient?.email || 'N/A'}`, 50, yPosition);
-
-      // Doctor Information Section
-      yPosition += 30;
-      doc.fillColor('#1e40af').fontSize(16).font('Helvetica-Bold').text('DOCTOR INFORMATION', 300, yPosition);
-      yPosition += 25;
-      doc.fillColor('#374151').fontSize(12).font('Helvetica');
-      
-      addText(`Dr. ${doctor?.name || 'N/A'}`, 300, yPosition);
-      yPosition += 20;
-      addText(`Specialization: ${doctor?.specialization || 'N/A'}`, 300, yPosition);
-      yPosition += 20;
-      addText(`Degrees: ${doctor?.degrees || 'N/A'}`, 300, yPosition);
-
-      // Appointment Details Section
-      yPosition = Math.max(yPosition + 30, 265);
-      doc.fillColor('#1e40af').fontSize(16).font('Helvetica-Bold').text('APPOINTMENT DETAILS', 50, yPosition);
-      yPosition += 25;
-      doc.fillColor('#374151').fontSize(12).font('Helvetica');
-      
-      addText(`Date: ${appointment?.date || 'N/A'}`, 50, yPosition);
-      yPosition += 20;
-      addText(`Time: ${appointment?.time || 'N/A'}`, 50, yPosition);
-      yPosition += 20;
-      addText(`Type: ${appointment?.type || 'In-Clinic'}`, 50, yPosition);
-      yPosition += 20;
-      addText(`Status: ${appointment?.status || 'Pending'}`, 50, yPosition);
-      yPosition += 20;
-      addText(`Consultation Fee: ${appointment?.consultationFee || 'N/A'}`, 50, yPosition);
-
-      // Reason for Visit Section
-      if (appointment?.reason) {
-        yPosition += 30;
-        doc.fillColor('#1e40af').fontSize(16).font('Helvetica-Bold').text('REASON FOR VISIT', 50, yPosition);
-        yPosition += 25;
-        doc.fillColor('#374151').fontSize(12).font('Helvetica');
-        addText(appointment.reason, 50, yPosition, { width: 495 });
+      for (let i = 0; i < Math.floor(notesHeight / lineSpacing); i++) {
+        const y = notesStartY + (i * lineSpacing);
+        doc.moveTo(50, y).lineTo(545, y).strokeColor('#e0e0e0').lineWidth(0.5);
       }
 
-      // Medical Notes Section (Empty for doctor to fill)
-      yPosition = Math.max(yPosition + 60, 400);
-      doc.fillColor('#1e40af').fontSize(16).font('Helvetica-Bold').text('MEDICAL NOTES', 50, yPosition);
-      yPosition += 25;
-      
-      // Draw a large box for medical notes
-      doc.strokeColor('#d1d5db').lineWidth(1).rect(50, yPosition, 495, 150).stroke();
-      
-      // Add placeholder text inside the box
-      doc.fillColor('#9ca3af').fontSize(11).font('Helvetica-Oblique');
-      doc.text('(Doctor to fill in medical notes, diagnosis, and treatment plan)', 55, yPosition + 5);
+      // Position cursor after notes section
+      doc.y = notesStartY + notesHeight + 20;
 
-      // Prescription Section (Empty for doctor to fill)
-      yPosition += 170;
-      doc.fillColor('#1e40af').fontSize(16).font('Helvetica-Bold').text('PRESCRIPTION', 50, yPosition);
-      yPosition += 25;
-      
-      // Draw a box for prescription
-      doc.strokeColor('#d1d5db').lineWidth(1).rect(50, yPosition, 495, 100).stroke();
-      
-      // Add placeholder text inside the prescription box
-      doc.fillColor('#9ca3af').fontSize(11).font('Helvetica-Oblique');
-      doc.text('(Doctor to prescribe medications here)', 55, yPosition + 5);
+      // Footer Section
+      doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+      doc.moveDown();
 
-      // Follow-up Section
-      yPosition += 120;
-      doc.fillColor('#1e40af').fontSize(14).font('Helvetica-Bold').text('FOLLOW-UP', 50, yPosition);
-      yPosition += 20;
-      doc.fillColor('#374151').fontSize(12).font('Helvetica');
-      addText('Follow-up Date: _________________', 50, yPosition);
-      yPosition += 20;
-      addText('Next Appointment: _________________', 50, yPosition);
-
-      // Footer
-      yPosition = 750;
-      doc.strokeColor('#e2e8f0').lineWidth(1).moveTo(50, yPosition).lineTo(545, yPosition).stroke();
+      // Footer content
+      doc.fontSize(10).font('Helvetica').text('Dr. Sanaullah Welfare Foundation', { align: 'center' });
+      doc.text('Main Hospital Building, Peshawar, Pakistan', { align: 'center' });
+      doc.text('Phone: +92-XXX-XXXXXXX | Email: info@drsanaullahwelfarefoundation.com', { align: 'center' });
+      doc.moveDown();
       
-      // Signature lines
-      yPosition += 20;
-      doc.fillColor('#374151').fontSize(10).font('Helvetica');
-      addText('Doctor Signature: _________________________', 50, yPosition);
-      addText('Date: _________________', 350, yPosition);
-      
-      yPosition += 30;
-      addText('Patient Signature: _________________________', 50, yPosition);
-      addText('Date: _________________', 350, yPosition);
-
-      // Footer text
-      doc.fillColor('#64748b').fontSize(8).font('Helvetica');
-      doc.text('This appointment sheet is generated by Dr. Sanaullah Welfare Foundation Management System', 50, 780, { align: 'center' });
+      // Generation timestamp
+      doc.fontSize(8).text(
+        `Generated on: ${new Date().toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })}`,
+        { align: 'center' }
+      );
 
       doc.end();
 
@@ -155,14 +113,15 @@ export function generateAppointmentSheetPDF(appointmentData) {
   });
 }
 
-export function generateAppointmentSheetFileName(appointment) {
-  const patientName = appointment.patient?.name || 'Patient';
-  const doctorName = appointment.doctor?.name || 'Doctor';
-  const date = appointment.appointment?.date || new Date().toISOString().split('T')[0];
+export function generateAppointmentSheetFileName(appointmentData) {
+  const patientName = appointmentData.patient?.name || 'Unknown';
+  const doctorName = appointmentData.doctor?.name || 'Unknown';
+  const date = appointmentData.appointment?.appointment_date || new Date().toISOString().split('T')[0];
   
   // Clean names for filename
-  const cleanPatientName = patientName.replace(/[^a-zA-Z0-9]/g, '_');
-  const cleanDoctorName = doctorName.replace(/[^a-zA-Z0-9]/g, '_');
+  const cleanPatientName = patientName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+  const cleanDoctorName = doctorName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+  const cleanDate = date.replace(/[^a-zA-Z0-9]/g, '_');
   
-  return `Appointment_Sheet_${cleanPatientName}_Dr_${cleanDoctorName}_${date}.pdf`;
+  return `appointment_sheet_${cleanPatientName}_${cleanDoctorName}_${cleanDate}.pdf`;
 }

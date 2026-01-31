@@ -684,8 +684,117 @@ router.get('/:appointmentId/session-summary', async (req, res) => {
 		console.log(`✅ [Session Summary] Data retrieved for appointment: ${appointmentId}`);
 		res.json(responseData);
 	} catch (err) {
-		console.error('❌ [Session Summary] Error:', err);
-		res.status(500).json({ error: err.message });
+	}
+});
+
+// Download appointment sheet PDF
+router.get('/:appointmentId/appointment-sheet/pdf', authMiddleware, async (req, res) => {
+	try {
+		const { appointmentId } = req.params;
+		const { userId, userRole } = req.user;
+		
+		console.log(`📄 [Appointment Sheet PDF] Request for appointment: ${appointmentId} by user: ${userId}`);
+		
+		// Get appointment with all related data
+		const { data: appointment, error } = await supabaseAdmin
+			.from('appointments')
+			.select(`
+				*,
+				patients(user_id, name, age, gender, phone, email),
+				doctors(name, specialization)
+			`)
+			.eq('id', appointmentId)
+			.single();
+		
+		if (error || !appointment) {
+			console.error('❌ [Appointment Sheet PDF] Appointment not found:', error);
+			return res.status(404).json({ error: 'Appointment not found' });
+		}
+		
+		// Check access permissions
+		const isPatient = appointment.patient_id === userId;
+		const isDoctor = appointment.doctors?.user_id === userId;
+		const isAdmin = userRole === 'admin';
+		
+		if (!isPatient && !isDoctor && !isAdmin) {
+			console.error(`❌ [Appointment Sheet PDF] Access denied for user: ${userId}`);
+			return res.status(403).json({ error: 'Access denied' });
+		}
+		
+		// Prepare data for PDF generation
+		const appointmentSheetData = {
+			patient: appointment.patients,
+			doctor: appointment.doctors,
+			appointment: {
+				appointment_date: appointment.appointment_date,
+				appointment_time: appointment.appointment_time,
+				status: appointment.status
+			}
+		};
+		
+		// Generate PDF
+		const pdfBuffer = await generateAppointmentSheetPDF(appointmentSheetData);
+		
+		// Set response headers
+		const fileName = generateAppointmentSheetFileName(appointmentSheetData);
+		res.setHeader('Content-Type', 'application/pdf');
+		res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+		res.setHeader('Content-Length', pdfBuffer.length);
+		
+		console.log(`✅ [Appointment Sheet PDF] Generated for appointment: ${appointmentId}`);
+		res.send(pdfBuffer);
+		
+	} catch (error) {
+		console.error('❌ [Appointment Sheet PDF] Error:', error);
+		res.status(500).json({ error: 'Failed to generate appointment sheet PDF' });
+	}
+});
+
+// View appointment sheet as printable page
+router.get('/:appointmentId/appointment-sheet', authMiddleware, async (req, res) => {
+	try {
+		const { appointmentId } = req.params;
+		const { userId, userRole } = req.user;
+		
+		// Get appointment with all related data
+		const { data: appointment, error } = await supabaseAdmin
+			.from('appointments')
+			.select(`
+				*,
+				patients(user_id, name, age, gender, phone, email),
+				doctors(name, specialization)
+			`)
+			.eq('id', appointmentId)
+			.single();
+		
+		if (error || !appointment) {
+			return res.status(404).json({ error: 'Appointment not found' });
+		}
+		
+		// Check access permissions
+		const isPatient = appointment.patient_id === userId;
+		const isDoctor = appointment.doctors?.user_id === userId;
+		const isAdmin = userRole === 'admin';
+		
+		if (!isPatient && !isDoctor && !isAdmin) {
+			return res.status(403).json({ error: 'Access denied' });
+		}
+		
+		// Return appointment data for frontend rendering
+		res.json({
+			patient: appointment.patients,
+			doctor: appointment.doctors,
+			appointment: {
+				id: appointment.id,
+				appointment_date: appointment.appointment_date,
+				appointment_time: appointment.appointment_time,
+				status: appointment.status
+			}
+		});
+		
+	} catch (error) {
+		console.error('❌ [Appointment Sheet View] Error:', error);
+		res.status(500).json({ error: 'Failed to fetch appointment sheet data' });
 	}
 });
 
