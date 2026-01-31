@@ -3,6 +3,8 @@ import { supabaseAdmin } from '../lib/supabase.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { generateSessionSummaryPDF, generateSessionSummaryFileName } from '../lib/sessionSummaryGenerator.js';
 import { generateAppointmentSheetPDF, generateAppointmentSheetFileName } from '../lib/appointmentSheetGenerator.js';
+import { generatePatientFilePDF, generatePatientFileName } from '../lib/patientFileGenerator.js';
+import { uploadFile } from '../lib/storage.js';
 
 const router = Router();
 
@@ -298,7 +300,8 @@ router.post('/', async (req, res) => {
 			const fileName = generatePatientFileName(appointmentData.patient, appointmentData.appointment);
 			
 			// Upload to storage
-			const fileUrl = await uploadFile('patient-files', pdfBuffer, fileName, 'application/pdf');
+			const uploadResult = await uploadFile('patient-files', pdfBuffer, fileName, 'application/pdf');
+			const fileUrl = uploadResult.url;
 			
 			// Update appointment with patient file URL
 			await supabaseAdmin
@@ -355,7 +358,8 @@ router.post('/', async (req, res) => {
 			const appointmentSheetFileName = generateAppointmentSheetFileName(appointmentSheetData);
 			
 			// Upload to storage
-			const appointmentSheetUrl = await uploadFile('appointment-sheets', appointmentSheetBuffer, appointmentSheetFileName, 'application/pdf');
+			const uploadResult = await uploadFile('appointment-sheets', appointmentSheetBuffer, appointmentSheetFileName, 'application/pdf');
+			const appointmentSheetUrl = uploadResult.url;
 			
 			// Update appointment with appointment sheet URL
 			const { data: updatedAppointment } = await supabaseAdmin
