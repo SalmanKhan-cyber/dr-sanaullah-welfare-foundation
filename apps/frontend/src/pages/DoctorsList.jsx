@@ -24,6 +24,8 @@ export default function DoctorsList() {
 		reason: ''
 	});
 	const [patientProfileForm, setPatientProfileForm] = useState({
+		name: '',
+		phone: '',
 		age: '',
 		gender: 'male',
 		cnic: '',
@@ -132,8 +134,8 @@ export default function DoctorsList() {
 		e.preventDefault();
 		
 		// Validate required fields
-		if (!patientProfileForm.age || !patientProfileForm.gender || !patientProfileForm.cnic) {
-			alert('Please fill in all required fields (Age, Gender, CNIC)');
+		if (!patientProfileForm.name || !patientProfileForm.phone || !patientProfileForm.age || !patientProfileForm.gender || !patientProfileForm.cnic) {
+			alert('Please fill in all required fields (Name, Phone, Age, Gender, CNIC)');
 			return;
 		}
 
@@ -179,6 +181,8 @@ export default function DoctorsList() {
 			// Include patient details for guest bookings
 			if (!isAuthenticated) {
 				requestBody.patient_details = {
+					name: patientProfileForm.name,
+					phone: patientProfileForm.phone,
 					age: parseInt(patientProfileForm.age),
 					gender: patientProfileForm.gender,
 					cnic: patientProfileForm.cnic,
@@ -424,6 +428,30 @@ export default function DoctorsList() {
 
 									<form onSubmit={handlePatientProfileSubmit} className="space-y-4" onClick={(e) => e.stopPropagation()}>
 										<div className="grid grid-cols-2 gap-4">
+											<div>
+												<label className="block text-sm font-medium mb-1">Name *</label>
+												<input
+													type="text"
+													className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-brand"
+													value={patientProfileForm.name}
+													onChange={e => setPatientProfileForm({...patientProfileForm, name: e.target.value})}
+													onClick={(e) => e.stopPropagation()}
+													required
+													disabled={bookingLoading}
+												/>
+											</div>
+											<div>
+												<label className="block text-sm font-medium mb-1">Phone *</label>
+												<input
+													type="tel"
+													className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-brand"
+													value={patientProfileForm.phone}
+													onChange={e => setPatientProfileForm({...patientProfileForm, phone: e.target.value})}
+													onClick={(e) => e.stopPropagation()}
+													required
+													disabled={bookingLoading}
+												/>
+											</div>
 											<div>
 												<label className="block text-sm font-medium mb-1">Age *</label>
 												<input
