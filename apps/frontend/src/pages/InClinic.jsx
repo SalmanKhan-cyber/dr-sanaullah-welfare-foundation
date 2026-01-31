@@ -49,73 +49,10 @@ export default function InClinic() {
 	async function checkPatientProfile() {
 		setCheckingProfile(true);
 		setShowProfileForm(false);
-		try {
-			const res = await apiRequest('/api/patients/me');
-			console.log('📋 Profile check response:', res);
-			
-			// Check if profile exists and has required fields
-			if (res.profile && res.profile.user_id) {
-				// Verify profile has minimum required fields
-				// Note: name and phone might be undefined if columns don't exist yet
-				const hasName = res.profile.name !== undefined && res.profile.name !== null && res.profile.name !== '';
-				const hasPhone = res.profile.phone !== undefined && res.profile.phone !== null && res.profile.phone !== '';
-				const hasAge = res.profile.age !== undefined && res.profile.age !== null;
-				const hasGender = res.profile.gender !== undefined && res.profile.gender !== null && res.profile.gender !== '';
-				const hasCnic = res.profile.cnic !== undefined && res.profile.cnic !== null && res.profile.cnic !== '';
-				
-				const hasRequiredFields = hasName && hasPhone && hasAge && hasGender && hasCnic;
-				
-				console.log('📋 Profile completeness check:', {
-					hasName, hasPhone, hasAge, hasGender, hasCnic,
-					profile: res.profile
-				});
-				
-				if (hasRequiredFields) {
-					setHasPatientProfile(true);
-					setPatientProfileForm({
-						name: res.profile.name || '',
-						phone: res.profile.phone || '',
-						age: res.profile.age || '',
-						gender: res.profile.gender || 'male',
-						cnic: res.profile.cnic || '',
-						history: res.profile.history || ''
-					});
-				} else {
-					// Profile exists but incomplete
-					console.log('⚠️ Profile exists but incomplete. Missing:', {
-						name: !hasName,
-						phone: !hasPhone,
-						age: !hasAge,
-						gender: !hasGender,
-						cnic: !hasCnic
-					});
-					setHasPatientProfile(false);
-					setShowProfileForm(true);
-					// Pre-fill form with existing data
-					setPatientProfileForm({
-						name: res.profile.name || '',
-						phone: res.profile.phone || '',
-						age: res.profile.age || '',
-						gender: res.profile.gender || 'male',
-						cnic: res.profile.cnic || '',
-						history: res.profile.history || ''
-					});
-				}
-			} else {
-				console.log('⚠️ No profile found');
-				setHasPatientProfile(false);
-				setShowProfileForm(true);
-			}
-			// Always start with details step, regardless of whether profile exists
-			setBookingStep('details');
-		} catch (err) {
-			console.error('❌ Error checking patient profile:', err);
-			setHasPatientProfile(false);
-			setShowProfileForm(true);
-			setBookingStep('details'); // Start with details step
-		} finally {
-			setCheckingProfile(false);
-		}
+		// Skip profile check for non-authenticated users, go directly to details
+		setHasPatientProfile(false);
+		setBookingStep('details');
+		setCheckingProfile(false);
 	}
 
 	async function fetchDoctors() {
@@ -179,40 +116,14 @@ export default function InClinic() {
 
 		setBookingLoading(true);
 		try {
-			// If patient doesn't have a profile, create one
-			if (!hasPatientProfile) {
-				await apiRequest('/api/patients/profile', {
-					method: 'POST',
-					body: JSON.stringify({
-						name: patientProfileForm.name,
-						phone: patientProfileForm.phone,
-						age: parseInt(patientProfileForm.age),
-						gender: patientProfileForm.gender,
-						cnic: patientProfileForm.cnic,
-						history: patientProfileForm.history || null
-					})
-				});
-				setHasPatientProfile(true);
-			} else {
-				// Update existing profile
-				await apiRequest('/api/patients/profile', {
-					method: 'PUT',
-					body: JSON.stringify({
-						name: patientProfileForm.name,
-						phone: patientProfileForm.phone,
-						age: parseInt(patientProfileForm.age),
-						gender: patientProfileForm.gender,
-						cnic: patientProfileForm.cnic,
-						history: patientProfileForm.history || null
-					})
-				});
-			}
-			
+			// For guest users, just proceed to datetime step without creating profile
+			// The backend will handle creating the patient record during booking
+			setHasPatientProfile(true);
 			setShowProfileForm(false);
 			setBookingStep('datetime'); // Move to date/time selection
 			setBookingLoading(false);
 		} catch (err) {
-			alert(err.message || 'Failed to save profile');
+			alert(err.message || 'Failed to save details');
 			setBookingLoading(false);
 		}
 	}
@@ -234,20 +145,45 @@ export default function InClinic() {
 
 		setBookingLoading(true);
 		try {
-			await apiRequest('/api/appointments', {
+			const requestBody = {
+				doctor_id: selectedDoctor.id,
+				appointment_date: appointmentForm.appointment_date,
+				appointment_time: appointmentForm.appointment_time,
+				reason: appointmentForm.reason || null
+			};
+
+			// Include patient details for guest bookings
+			if (!isAuthenticated) {
+				requestBody.patient_details = {
+					name: patientProfileForm.name,
+					phone: patientProfileForm.phone,
+					age: parseInt(patientProfileForm.age),
+					gender: patientProfileForm.gender,
+					cnic: patientProfileForm.cnic,
+					history: patientProfileForm.history || null
+				};
+			}
+
+			const response = await apiRequest('/api/appointments', {
 				method: 'POST',
-				body: JSON.stringify({
-					doctor_id: selectedDoctor.id,
-					appointment_date: appointmentForm.appointment_date,
-					appointment_time: appointmentForm.appointment_time,
-					reason: appointmentForm.reason || null
-				})
+				body: JSON.stringify(requestBody)
 			});
 			
-			alert('In-clinic appointment booked successfully!');
+			// Handle appointment sheet download if available
+			if (response.appointment_sheet_url) {
+				const link = document.createElement('a');
+				link.href = response.appointment_sheet_url;
+				link.download = response.appointment_sheet_filename || 'appointment-sheet.pdf';
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+			}
+
+			alert('In-clinic appointment booked successfully! Your appointment sheet has been downloaded.');
 			setSelectedDoctor(null);
 			setAppointmentForm({ appointment_date: '', appointment_time: '', reason: '' });
 			setShowProfileForm(false);
+			setBookingStep('details');
 			navigate('/dashboard/patient');
 		} catch (err) {
 			console.error('Booking error:', err);
@@ -408,30 +344,10 @@ export default function InClinic() {
 						</div>
 						
 						<div className="p-6">
-							{!isAuthenticated ? (
-								<div className="text-center space-y-4">
-									<div className="text-6xl mb-4">🔒</div>
-									<h3 className="text-xl font-semibold text-gray-900">Login Required</h3>
-									<p className="text-gray-600">Please login or register to book an appointment</p>
-									<div className="flex gap-3 mt-6">
-										<Link
-											to={`/login?redirect=/in-clinic&doctor=${selectedDoctor.id}`}
-											className="flex-1 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center"
-										>
-											Login
-										</Link>
-										<Link
-											to={`/login?redirect=/in-clinic&doctor=${selectedDoctor.id}`}
-											className="flex-1 border-2 border-brand text-brand px-6 py-3 rounded-lg font-semibold hover:bg-brand-light text-center"
-										>
-											Register
-										</Link>
-									</div>
-								</div>
-							) : checkingProfile ? (
+							{checkingProfile ? (
 								<div className="text-center py-8">
 									<div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-brand border-t-transparent mb-4"></div>
-									<p className="text-gray-600">Checking profile...</p>
+									<p className="text-gray-600">Loading...</p>
 								</div>
 							) : bookingStep === 'details' ? (
 								<>

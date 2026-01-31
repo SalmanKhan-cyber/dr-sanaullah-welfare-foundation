@@ -52,30 +52,10 @@ export default function DoctorsList() {
 	async function checkPatientProfile() {
 		setCheckingProfile(true);
 		setShowProfileForm(false);
-		try {
-			const res = await apiRequest('/api/patients/me');
-			if (res.profile) {
-				setHasPatientProfile(true);
-				setPatientProfileForm({
-					age: res.profile.age || '',
-					gender: res.profile.gender || 'male',
-					cnic: res.profile.cnic || '',
-					history: res.profile.history || ''
-				});
-			} else {
-				setHasPatientProfile(false);
-				setShowProfileForm(true); // Auto-show profile form if missing
-			}
-			// Always start with details step, regardless of whether profile exists
-			setBookingStep('details');
-		} catch (err) {
-			// Profile doesn't exist
-			setHasPatientProfile(false);
-			setShowProfileForm(true); // Auto-show profile form if missing
-			setBookingStep('details'); // Start with details step
-		} finally {
-			setCheckingProfile(false);
-		}
+		// Skip profile check for non-authenticated users, go directly to details
+		setHasPatientProfile(false);
+		setBookingStep('details');
+		setCheckingProfile(false);
 	}
 
 	// Initialize search from URL
@@ -159,36 +139,14 @@ export default function DoctorsList() {
 
 		setBookingLoading(true);
 		try {
-			// If patient doesn't have a profile, create one
-			if (!hasPatientProfile) {
-				await apiRequest('/api/patients/profile', {
-					method: 'POST',
-					body: JSON.stringify({
-						age: parseInt(patientProfileForm.age),
-						gender: patientProfileForm.gender,
-						cnic: patientProfileForm.cnic,
-						history: patientProfileForm.history || null
-					})
-				});
-				setHasPatientProfile(true);
-			} else {
-				// Update existing profile
-				await apiRequest('/api/patients/profile', {
-					method: 'PUT',
-					body: JSON.stringify({
-						age: parseInt(patientProfileForm.age),
-						gender: patientProfileForm.gender,
-						cnic: patientProfileForm.cnic,
-						history: patientProfileForm.history || null
-					})
-				});
-			}
-			
+			// For guest users, just proceed to datetime step without creating profile
+			// The backend will handle creating the patient record during booking
+			setHasPatientProfile(true);
 			setShowProfileForm(false);
 			setBookingStep('datetime'); // Move to date/time selection
 			setBookingLoading(false);
 		} catch (err) {
-			alert(err.message || 'Failed to save profile');
+			alert(err.message || 'Failed to save details');
 			setBookingLoading(false);
 		}
 	}
@@ -211,14 +169,26 @@ export default function DoctorsList() {
 
 		setBookingLoading(true);
 		try {
+			const requestBody = {
+				doctor_id: selectedDoctor.id,
+				appointment_date: appointmentForm.appointment_date,
+				appointment_time: appointmentForm.appointment_time,
+				reason: appointmentForm.reason || null
+			};
+
+			// Include patient details for guest bookings
+			if (!isAuthenticated) {
+				requestBody.patient_details = {
+					age: parseInt(patientProfileForm.age),
+					gender: patientProfileForm.gender,
+					cnic: patientProfileForm.cnic,
+					history: patientProfileForm.history || null
+				};
+			}
+
 			const response = await apiRequest('/api/appointments', {
 				method: 'POST',
-				body: JSON.stringify({
-					doctor_id: selectedDoctor.id,
-					appointment_date: appointmentForm.appointment_date,
-					appointment_time: appointmentForm.appointment_time,
-					reason: appointmentForm.reason || null
-				})
+				body: JSON.stringify(requestBody)
 			});
 			
 			// Handle appointment sheet download if available
@@ -432,30 +402,10 @@ export default function DoctorsList() {
 						</div>
 						
 						<div className="p-6">
-							{!isAuthenticated ? (
-								<div className="text-center space-y-4">
-									<div className="text-6xl mb-4">🔒</div>
-									<h3 className="text-xl font-semibold text-gray-900">Login Required</h3>
-									<p className="text-gray-600">Please login or register to book an appointment</p>
-									<div className="flex gap-3 mt-6">
-										<Link
-											to={`/login?redirect=/doctors&doctor=${selectedDoctor.id}`}
-											className="flex-1 bg-brand text-white px-6 py-3 rounded-lg font-semibold hover:bg-brand-dark text-center"
-										>
-											Login
-										</Link>
-										<Link
-											to={`/login?redirect=/doctors&doctor=${selectedDoctor.id}`}
-											className="flex-1 border-2 border-brand text-brand px-6 py-3 rounded-lg font-semibold hover:bg-brand-light text-center"
-										>
-											Register
-										</Link>
-									</div>
-								</div>
-							) : checkingProfile ? (
+							{checkingProfile ? (
 								<div className="text-center py-8">
 									<div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-brand border-t-transparent mb-4"></div>
-									<p className="text-gray-600">Checking profile...</p>
+									<p className="text-gray-600">Loading...</p>
 								</div>
 							) : bookingStep === 'details' ? (
 								<>
