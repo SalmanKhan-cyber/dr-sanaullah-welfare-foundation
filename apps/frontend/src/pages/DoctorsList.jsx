@@ -178,31 +178,17 @@ export default function DoctorsList() {
 				reason: appointmentForm.reason || null
 			};
 
-			// For guest users, always include patient details
-		if (!isAuthenticated) {
-			requestBody.patient_details = {
-				name: patientProfileForm.name,
-				phone: patientProfileForm.phone,
-				age: parseInt(patientProfileForm.age),
-				gender: patientProfileForm.gender,
-				cnic: patientProfileForm.cnic,
-				history: patientProfileForm.history || null
-			};
-			console.log('🔍 Frontend Debug - Sending patient_details:', requestBody.patient_details);
-			console.log('🔍 Frontend Debug - Name value:', patientProfileForm.name);
-		} else if (hasPatientProfile) {
-			// For authenticated users without patient profile, also send details
-			requestBody.patient_details = {
-				name: patientProfileForm.name,
-				phone: patientProfileForm.phone,
-				age: parseInt(patientProfileForm.age),
-				gender: patientProfileForm.gender,
-				cnic: patientProfileForm.cnic,
-				history: patientProfileForm.history || null
-			};
-			console.log('🔍 Frontend Debug - Auth user without profile - Sending patient_details:', requestBody.patient_details);
-			console.log('🔍 Frontend Debug - Name value:', patientProfileForm.name);
-		}
+			// Always include patient details for appointment sheet generation
+		requestBody.patient_details = {
+			name: patientProfileForm.name || 'Guest Patient',
+			phone: patientProfileForm.phone || 'Not Provided',
+			age: parseInt(patientProfileForm.age) || 0,
+			gender: patientProfileForm.gender || 'other',
+			cnic: patientProfileForm.cnic || 'Not Provided',
+			history: patientProfileForm.history || null
+		};
+		console.log('🔍 Frontend Debug - Sending patient_details:', requestBody.patient_details);
+		console.log('🔍 Frontend Debug - Name value:', patientProfileForm.name);
 
 			console.log('🔍 Frontend Debug - Complete request body:', requestBody);
 
