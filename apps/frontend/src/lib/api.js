@@ -1,7 +1,9 @@
 import { supabase } from './supabase';
 
-// API URL configuration - Force localhost for development
-const API_URL = 'http://localhost:4000';
+// API URL configuration
+const API_URL = import.meta.env.MODE === 'production' 
+	? 'https://3oqcvri8.up.railway.app'  // Railway backend URL
+	: 'http://localhost:4000'; // Local backend for development
 
 // Debug log to verify API URL
 console.log('🔍 API URL being used:', API_URL);
