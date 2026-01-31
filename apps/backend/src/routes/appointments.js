@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { supabaseAdmin } from '../lib/supabase.js';
-import { uploadFile } from '../lib/storage.js';
-import { generatePatientFilePDF, generatePatientFileName } from '../lib/patientFileGenerator.js';
+import { authMiddleware } from '../middleware/auth.js';
 import { generateSessionSummaryPDF, generateSessionSummaryFileName } from '../lib/sessionSummaryGenerator.js';
+import { generateAppointmentSheetPDF, generateAppointmentSheetFileName } from '../lib/appointmentSheetGenerator.js';
 
 const router = Router();
 
@@ -286,7 +286,8 @@ router.post('/', async (req, res) => {
 				appointment: {
 					...data,
 					date: appointment_date,
-					time: appointment_time
+					time: appointment_time,
+					reason: reason
 				}
 			};
 			
@@ -309,6 +310,63 @@ router.post('/', async (req, res) => {
 		} catch (fileError) {
 			console.error('❌ Error generating patient file:', fileError);
 			// Don't fail the appointment booking if file generation fails
+		}
+
+		// Generate appointment sheet for the appointment
+		try {
+			console.log('📄 Generating appointment sheet for appointment:', data.id);
+			
+			// Get complete patient data
+			const { data: completePatient } = await supabaseAdmin
+				.from('patients')
+				.select('*')
+				.eq('user_id', userId)
+				.single();
+			
+			// Get complete doctor data
+			const { data: completeDoctor } = await supabaseAdmin
+				.from('doctors')
+				.select('*')
+				.eq('id', doctor_id)
+				.single();
+			
+			// Prepare appointment data for appointment sheet
+			const appointmentSheetData = {
+				patient: {
+					...completePatient,
+					email: patient.email
+				},
+				doctor: completeDoctor || { name: data.doctors?.name },
+				appointment: {
+					...data,
+					date: appointment_date,
+					time: appointment_time,
+					reason: reason,
+					type: 'In-Clinic', // Default type, can be updated based on booking source
+					status: 'pending',
+					consultationFee: consultationFee
+				}
+			};
+			
+			// Generate appointment sheet PDF
+			const appointmentSheetBuffer = await generateAppointmentSheetPDF(appointmentSheetData);
+			
+			// Generate filename
+			const appointmentSheetFileName = generateAppointmentSheetFileName(appointmentSheetData);
+			
+			// Upload to storage
+			const appointmentSheetUrl = await uploadFile('appointment-sheets', appointmentSheetBuffer, appointmentSheetFileName, 'application/pdf');
+			
+			// Update appointment with appointment sheet URL
+			await supabaseAdmin
+				.from('appointments')
+				.update({ appointment_sheet_url: appointmentSheetUrl })
+				.eq('id', data.id);
+			
+			console.log('✅ Appointment sheet generated and uploaded:', appointmentSheetUrl);
+		} catch (appointmentSheetError) {
+			console.error('❌ Error generating appointment sheet:', appointmentSheetError);
+			// Don't fail the appointment booking if appointment sheet generation fails
 		}
 		
 		res.json({ appointment: data });
@@ -645,6 +703,75 @@ router.get('/:appointmentId/session-summary/pdf', async (req, res) => {
 		res.send(pdfBuffer);
 	} catch (err) {
 		console.error('❌ [Session Summary PDF] Error:', err);
+		res.status(500).json({ error: err.message });
+	}
+});
+
+// Download appointment sheet PDF
+router.get('/:appointmentId/appointment-sheet/pdf', async (req, res) => {
+	try {
+		const { appointmentId } = req.params;
+		const userId = req.user.id;
+		const userRole = req.user.role;
+		
+		console.log(`🔍 [Appointment Sheet PDF] Request for appointment: ${appointmentId}, User: ${userId}, Role: ${userRole}`);
+		
+		// Get appointment with all related data
+		const { data: appointment, error } = await supabaseAdmin
+			.from('appointments')
+			.select(`
+				*,
+				patients(user_id, name, age, gender, phone, email),
+				doctors(name, specialization)
+			`)
+			.eq('id', appointmentId)
+			.single();
+		
+		if (error || !appointment) {
+			console.error('❌ [Appointment Sheet PDF] Appointment not found:', error);
+			return res.status(404).json({ error: 'Appointment not found' });
+		}
+		
+		// Check access permissions
+		const isPatient = appointment.patient_id === userId;
+		const isDoctor = appointment.doctors?.user_id === userId;
+		const isAdmin = userRole === 'admin';
+		
+		if (!isPatient && !isDoctor && !isAdmin) {
+			console.error(`❌ [Appointment Sheet PDF] Access denied for user: ${userId}`);
+			return res.status(403).json({ error: 'Access denied' });
+		}
+		
+		// Prepare data for PDF generation
+		const appointmentSheetData = {
+			patient: appointment.patients,
+			doctor: appointment.doctors,
+			appointment: {
+				...appointment,
+				date: appointment.appointment_date,
+				time: appointment.appointment_time,
+				reason: appointment.reason,
+				type: 'In-Clinic', // Default type
+				status: appointment.status,
+				consultationFee: appointment.consultation_fee
+			}
+		};
+		
+		// Generate PDF
+		const pdfBuffer = await generateAppointmentSheetPDF(appointmentSheetData);
+		
+		// Generate filename
+		const fileName = generateAppointmentSheetFileName(appointmentSheetData);
+		
+		// Set response headers
+		res.setHeader('Content-Type', 'application/pdf');
+		res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+		res.setHeader('Content-Length', pdfBuffer.length);
+		
+		console.log(`✅ [Appointment Sheet PDF] Generated for appointment: ${appointmentId}`);
+		res.send(pdfBuffer);
+	} catch (err) {
+		console.error('❌ [Appointment Sheet PDF] Error:', err);
 		res.status(500).json({ error: err.message });
 	}
 });

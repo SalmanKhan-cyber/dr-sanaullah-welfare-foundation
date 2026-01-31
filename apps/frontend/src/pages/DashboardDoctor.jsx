@@ -539,6 +539,14 @@ export default function DashboardDoctor() {
 																>
 																	✓ Mark Complete
 																</button>
+																{apt.appointment_sheet_url && (
+																	<button
+																		onClick={() => window.open(`/api/appointments/${apt.id}/appointment-sheet/pdf`, '_blank')}
+																		className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
+																	>
+																		📄 Appointment Sheet
+																	</button>
+																)}
 															</div>
 														)}
 													</div>

@@ -568,6 +568,26 @@ export default function DashboardPatient() {
 															<p className="text-brand font-bold text-xl">PKR {parseFloat(apt.final_fee).toFixed(2)}</p>
 														</div>
 													)}
+													<div className="mt-3 space-y-2">
+														{apt.appointment_sheet_url && (
+															<button
+																onClick={() => window.open(`/api/appointments/${apt.id}/appointment-sheet/pdf`, '_blank')}
+																className="w-full bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition-all flex items-center justify-center gap-2 text-sm"
+															>
+																<span>📄</span>
+																<span>Appointment Sheet</span>
+															</button>
+														)}
+														{apt.patient_file_url && (
+															<button
+																onClick={() => window.open(`/api/appointments/${apt.id}/patient-file/pdf`, '_blank')}
+																className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 text-sm"
+															>
+																<span>📋</span>
+																<span>Patient File</span>
+															</button>
+														)}
+													</div>
 												</div>
 											</div>
 										</div>
