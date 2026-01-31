@@ -102,46 +102,217 @@ router.get('/doctor/me', async (req, res) => {
 	}
 });
 
-// Book appointment (patient only)
-router.post('/', async (req, res) => {
+// Public guest booking endpoint (no authentication required)
+router.post('/guest', async (req, res) => {
 	try {
-		const userId = req.user.id;
-		const { doctor_id, appointment_date, appointment_time, reason } = req.body || {};
+		const { doctor_id, appointment_date, appointment_time, reason, patient_details } = req.body || {};
 		
 		if (!doctor_id || !appointment_date || !appointment_time) {
 			return res.status(400).json({ error: 'doctor_id, appointment_date, and appointment_time are required' });
 		}
 		
-		// Verify patient exists and get the correct patient_id to use
-		// Handle both cases: constraint might reference patients(user_id) or patients(id)
-		let patient = null;
-		
-		// Try to find patient profile (with retry if not found immediately - handles race condition)
-		for (let attempt = 0; attempt < 3; attempt++) {
-			const { data, error } = await supabaseAdmin
-				.from('patients')
-				.select('id, user_id, name, phone, age, gender, cnic')
-				.eq('user_id', userId)
-				.maybeSingle(); // Use maybeSingle() to return null instead of error
-			
-			if (data && data.user_id) {
-				patient = data;
-				console.log(`✅ Patient profile found on attempt ${attempt + 1}:`, { id: patient.id, user_id: patient.user_id });
-				break;
-			}
-			
-			// If patient not found and this is not the last attempt, wait a bit
-			if (attempt < 2) {
-				console.log(`⏳ Patient profile not found on attempt ${attempt + 1}, retrying...`);
-				await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
-			}
+		if (!patient_details || !patient_details.name || !patient_details.phone || !patient_details.age || !patient_details.gender || !patient_details.cnic) {
+			return res.status(400).json({ error: 'Complete patient details are required for guest booking' });
 		}
 		
-		if (!patient || !patient.user_id) {
-			console.error('❌ Patient profile not found for userId:', userId);
-			return res.status(404).json({ 
-				error: 'Patient profile not found. Please complete your profile first and wait a moment before booking.' 
+		console.log('👤 Processing guest booking with patient details:', patient_details);
+		
+		// Get doctor details for fee calculation
+		const { data: doctor } = await supabaseAdmin
+			.from('doctors')
+			.select('consultation_fee, discount_rate, name, specialization')
+			.eq('id', doctor_id)
+			.single();
+		
+		if (!doctor) {
+			return res.status(404).json({ error: 'Doctor not found' });
+		}
+		
+		// Calculate final fee with discount
+		const consultationFee = parseFloat(doctor.consultation_fee) || 0;
+		const discountRate = parseFloat(doctor.discount_rate) || 0;
+		const discountAmount = (consultationFee * discountRate) / 100;
+		const finalFee = consultationFee - discountAmount;
+		
+		// Create patient record first
+		console.log('👤 Creating patient record for guest user');
+		
+		const { data: newPatient, error: patientCreateError } = await supabaseAdmin
+			.from('patients')
+			.insert({
+				user_id: null, // Guest users don't have user_id
+				name: patient_details.name,
+				phone: patient_details.phone,
+				age: patient_details.age,
+				gender: patient_details.gender,
+				cnic: patient_details.cnic,
+				history: patient_details.history || null
+			})
+			.select('id')
+			.single();
+		
+		if (patientCreateError) {
+			console.error('❌ Error creating patient record for guest:', patientCreateError);
+			return res.status(500).json({ error: 'Failed to create patient record' });
+		}
+		
+		const patientIdForAppointment = newPatient.id;
+		console.log('✅ Created patient record for guest:', newPatient.id);
+		
+		console.log('📅 Creating appointment for guest patient:', patientIdForAppointment);
+		
+		// Create appointment
+		const { data, error } = await supabaseAdmin
+			.from('appointments')
+			.insert({
+				patient_id: patientIdForAppointment,
+				doctor_id,
+				appointment_date,
+				appointment_time,
+				reason: reason || null,
+				consultation_fee: consultationFee,
+				discount_applied: discountRate,
+				final_fee: finalFee,
+				status: 'pending'
+			})
+			.select(`
+				*, 
+				doctors(name, specialization, degrees, consultation_fee, discount_rate)
+			`)
+			.single();
+		
+		if (error) {
+			console.error('❌ Appointment creation failed:', error);
+			return res.status(500).json({ error: error.message });
+		}
+		
+		console.log('✅ Guest appointment created:', data);
+		
+		// Generate appointment sheet PDF
+		let appointmentSheetUrl = null;
+		let appointmentSheetFilename = null;
+		
+		try {
+			console.log('📄 Generating appointment sheet PDF...');
+			
+			const pdfBuffer = await generateAppointmentSheetPDF({
+				patientName: patient_details.name,
+				patientAge: patient_details.age,
+				patientGender: patient_details.gender,
+				patientContact: patient_details.phone,
+				patientId: patient_details.cnic,
+				doctorName: doctor.name,
+				doctorSpecialization: doctor.specialization,
+				appointmentDate: appointment_date,
+				appointmentTime: appointment_time,
+				reason: reason || null
 			});
+			
+			const filename = generateAppointmentSheetFileName(patient_details.name, data.id);
+			const filePath = `appointment-sheets/${filename}`;
+			
+			// Upload to Supabase storage
+			const { error: uploadError } = await uploadFile(filePath, pdfBuffer, 'application/pdf');
+			
+			if (uploadError) {
+				console.error('❌ Failed to upload appointment sheet:', uploadError);
+			} else {
+				console.log('✅ Appointment sheet uploaded successfully');
+				
+				// Update appointment with sheet URL
+				const { error: updateError } = await supabaseAdmin
+					.from('appointments')
+					.update({ appointment_sheet_url: filePath })
+					.eq('id', data.id);
+				
+				if (updateError) {
+					console.error('❌ Failed to update appointment sheet URL:', updateError);
+				} else {
+					console.log('✅ Appointment sheet URL updated');
+					
+					// Generate signed URL for immediate download
+					const { signedUrl } = await supabaseAdmin.storage
+						.from('appointment-sheets')
+						.createSignedUrl(filePath, 60 * 60 * 24); // 24 hours expiry
+					
+					appointmentSheetUrl = signedUrl;
+					appointmentSheetFilename = filename;
+				}
+			}
+		} catch (pdfError) {
+			console.error('❌ Failed to generate appointment sheet:', pdfError);
+			// Don't fail the booking if PDF generation fails
+		}
+		
+		res.json({ 
+			appointment: data,
+			appointment_sheet_url: appointmentSheetUrl,
+			appointment_sheet_filename: appointmentSheetFilename
+		});
+		
+	} catch (err) {
+		console.error('❌ Guest booking error:', err);
+		res.status(500).json({ error: err.message });
+	}
+});
+
+// Book appointment (patient only)
+router.post('/', async (req, res) => {
+	try {
+		const userId = req.user?.id; // Optional for guest users
+		const { doctor_id, appointment_date, appointment_time, reason, patient_details } = req.body || {};
+		
+		if (!doctor_id || !appointment_date || !appointment_time) {
+			return res.status(400).json({ error: 'doctor_id, appointment_date, and appointment_time are required' });
+		}
+		
+		let patient = null;
+		
+		// Handle guest users (no authentication)
+		if (!userId && patient_details) {
+			console.log('👤 Processing guest booking with patient details:', patient_details);
+			
+			// Create a temporary patient object from guest details
+			patient = {
+				name: patient_details.name,
+				phone: patient_details.phone,
+				age: patient_details.age,
+				gender: patient_details.gender,
+				cnic: patient_details.cnic,
+				user_id: null // Guest users don't have a user_id
+			};
+		} else {
+			// Authenticated user - find existing patient profile
+			// Verify patient exists and get the correct patient_id to use
+			// Handle both cases: constraint might reference patients(user_id) or patients(id)
+			
+			// Try to find patient profile (with retry if not found immediately - handles race condition)
+			for (let attempt = 0; attempt < 3; attempt++) {
+				const { data, error } = await supabaseAdmin
+					.from('patients')
+					.select('id, user_id, name, phone, age, gender, cnic')
+					.eq('user_id', userId)
+					.maybeSingle(); // Use maybeSingle() to return null instead of error
+				
+				if (data && data.user_id) {
+					patient = data;
+					console.log(`✅ Patient profile found on attempt ${attempt + 1}:`, { id: patient.id, user_id: patient.user_id });
+					break;
+				}
+				
+				// If patient not found and this is not the last attempt, wait a bit
+				if (attempt < 2) {
+					console.log(`⏳ Patient profile not found on attempt ${attempt + 1}, retrying...`);
+					await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+				}
+			}
+			
+			if (!patient || !patient.user_id) {
+				console.error('❌ Patient profile not found for userId:', userId);
+				return res.status(404).json({ 
+					error: 'Patient profile not found. Please complete your profile first and wait a moment before booking.' 
+				});
+			}
 		}
 		
 		// Verify profile has required fields
@@ -212,7 +383,34 @@ router.post('/', async (req, res) => {
 		// If patients table has 'id' column (migrated schema), use it
 		// Otherwise, use user_id (original schema)
 		// Foreign key constraint will reference patients(id) or patients(user_id) accordingly
-		const patientIdForAppointment = patient.id || patient.user_id;
+		let patientIdForAppointment = patient.id || patient.user_id;
+		
+		// For guest users, create a patient record first
+		if (!userId && patient_details) {
+			console.log('👤 Creating patient record for guest user');
+			
+			const { data: newPatient, error: patientCreateError } = await supabaseAdmin
+				.from('patients')
+				.insert({
+					user_id: null, // Guest users don't have user_id
+					name: patient.name,
+					phone: patient.phone,
+					age: patient.age,
+					gender: patient.gender,
+					cnic: patient.cnic,
+					history: patient_details.history || null
+				})
+				.select('id')
+				.single();
+			
+			if (patientCreateError) {
+				console.error('❌ Error creating patient record for guest:', patientCreateError);
+				return res.status(500).json({ error: 'Failed to create patient record' });
+			}
+			
+			patientIdForAppointment = newPatient.id;
+			console.log('✅ Created patient record for guest:', newPatient.id);
+		}
 		
 		console.log('📅 Creating appointment - patient:', { id: patient.id, user_id: patient.user_id, using: patientIdForAppointment });
 		
