@@ -166,12 +166,8 @@ export default function DoctorsList() {
 			return;
 		}
 
-		// Check if patient has profile, if not show details form
-		if (!hasPatientProfile) {
-			setShowProfileForm(true);
-			setBookingStep('details');
-			return;
-		}
+		// Always proceed with booking - patient details will be included below
+		// Don't return early even if no patient profile
 
 		setBookingLoading(true);
 		try {
@@ -182,19 +178,31 @@ export default function DoctorsList() {
 				reason: appointmentForm.reason || null
 			};
 
-			// Include patient details for guest bookings
-			if (!isAuthenticated) {
-				requestBody.patient_details = {
-					name: patientProfileForm.name,
-					phone: patientProfileForm.phone,
-					age: parseInt(patientProfileForm.age),
-					gender: patientProfileForm.gender,
-					cnic: patientProfileForm.cnic,
-					history: patientProfileForm.history || null
-				};
-				console.log('🔍 Frontend Debug - Sending patient_details:', requestBody.patient_details);
-				console.log('🔍 Frontend Debug - Name value:', patientProfileForm.name);
-			}
+			// For guest users, always include patient details
+		if (!isAuthenticated) {
+			requestBody.patient_details = {
+				name: patientProfileForm.name,
+				phone: patientProfileForm.phone,
+				age: parseInt(patientProfileForm.age),
+				gender: patientProfileForm.gender,
+				cnic: patientProfileForm.cnic,
+				history: patientProfileForm.history || null
+			};
+			console.log('🔍 Frontend Debug - Sending patient_details:', requestBody.patient_details);
+			console.log('🔍 Frontend Debug - Name value:', patientProfileForm.name);
+		} else if (hasPatientProfile) {
+			// For authenticated users without patient profile, also send details
+			requestBody.patient_details = {
+				name: patientProfileForm.name,
+				phone: patientProfileForm.phone,
+				age: parseInt(patientProfileForm.age),
+				gender: patientProfileForm.gender,
+				cnic: patientProfileForm.cnic,
+				history: patientProfileForm.history || null
+			};
+			console.log('🔍 Frontend Debug - Auth user without profile - Sending patient_details:', requestBody.patient_details);
+			console.log('🔍 Frontend Debug - Name value:', patientProfileForm.name);
+		}
 
 			console.log('🔍 Frontend Debug - Complete request body:', requestBody);
 

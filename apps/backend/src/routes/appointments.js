@@ -115,8 +115,23 @@ router.post('/guest', async (req, res) => {
 		console.log('🔍 Debug - patient_details:', patient_details);
 		console.log('🔍 Debug - patient_details.name:', patient_details?.name);
 		
-		if (!patient_details || !patient_details.name || patient_details.name.trim() === '') {
-			return res.status(400).json({ error: 'Patient name is required for appointment sheet generation' });
+		// If patient_details is missing, try to create minimal patient info
+		if (!patient_details) {
+			patient_details = {
+				name: 'Guest Patient',
+				phone: 'Not Provided',
+				age: 0,
+				gender: 'other',
+				cnic: 'Not Provided',
+				history: null
+			};
+			console.log('🔍 Created minimal patient_details:', patient_details);
+		}
+		
+		// Check if name exists, if not use default
+		if (!patient_details.name || patient_details.name.trim() === '') {
+			patient_details.name = 'Guest Patient';
+			console.log('🔍 Using default name for patient');
 		}
 		
 		console.log('👤 Processing guest booking with patient details:', patient_details);
