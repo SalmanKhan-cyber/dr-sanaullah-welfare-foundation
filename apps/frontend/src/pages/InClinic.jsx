@@ -109,9 +109,9 @@ export default function InClinic() {
 	async function handlePatientProfileSubmit(e) {
 		e.preventDefault();
 		
-		// Validate required fields (only name, age, gender required for appointment sheet)
-		if (!patientProfileForm.name || !patientProfileForm.age || !patientProfileForm.gender) {
-			alert('Please fill in all required fields (Name, Age, Gender)');
+		// Validate required fields - simplified to only require name
+		if (!patientProfileForm.name) {
+			alert('Please provide your name for the appointment sheet');
 			return;
 		}
 
@@ -381,7 +381,7 @@ export default function InClinic() {
 										</div>
 
 										<div>
-											<label className="block text-sm font-medium mb-1">Phone Number (Optional)</label>
+											<label className="block text-sm font-medium mb-1">Phone Number *</label>
 											<input
 												type="tel"
 												className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-brand"
@@ -389,6 +389,7 @@ export default function InClinic() {
 												value={patientProfileForm.phone}
 												onChange={e => setPatientProfileForm({...patientProfileForm, phone: e.target.value})}
 												onClick={(e) => e.stopPropagation()}
+												required
 												disabled={bookingLoading}
 											/>
 										</div>
@@ -426,7 +427,7 @@ export default function InClinic() {
 										</div>
 
 										<div>
-											<label className="block text-sm font-medium mb-1">CNIC Number (Optional)</label>
+											<label className="block text-sm font-medium mb-1">CNIC Number *</label>
 											<input
 												type="text"
 												className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-brand"
@@ -434,6 +435,8 @@ export default function InClinic() {
 												value={patientProfileForm.cnic}
 												onChange={e => setPatientProfileForm({...patientProfileForm, cnic: e.target.value})}
 												onClick={(e) => e.stopPropagation()}
+												required
+												pattern="[0-9]{5}-[0-9]{7}-[0-9]{1}"
 												disabled={bookingLoading}
 											/>
 											<p className="text-xs text-gray-500 mt-1">Format: 12345-6789012-3</p>

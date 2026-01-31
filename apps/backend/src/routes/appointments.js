@@ -111,17 +111,17 @@ router.post('/guest', async (req, res) => {
 			return res.status(400).json({ error: 'doctor_id, appointment_date, and appointment_time are required' });
 		}
 		
-		// Only require basic details for appointment sheet generation
-		if (!patient_details || !patient_details.name || !patient_details.age || !patient_details.gender) {
-			return res.status(400).json({ error: 'Name, age, and gender are required for appointment sheet generation' });
+		// Simplified validation - just need basic info for appointment sheet
+		if (!patient_details || !patient_details.name) {
+			return res.status(400).json({ error: 'Patient name is required for appointment sheet generation' });
 		}
 		
-		console.log('👤 Processing guest booking for appointment sheet generation:', patient_details);
+		console.log('👤 Processing guest booking with patient details:', patient_details);
 		
-		// Get doctor details
+		// Get doctor details for fee calculation
 		const { data: doctor } = await supabaseAdmin
 			.from('doctors')
-			.select('name, specialization')
+			.select('consultation_fee, discount_rate, name, specialization')
 			.eq('id', doctor_id)
 			.single();
 		
@@ -129,7 +129,67 @@ router.post('/guest', async (req, res) => {
 			return res.status(404).json({ error: 'Doctor not found' });
 		}
 		
-		// Generate appointment sheet PDF only (no patient record creation)
+		// Calculate final fee with discount
+		const consultationFee = parseFloat(doctor.consultation_fee) || 0;
+		const discountRate = parseFloat(doctor.discount_rate) || 0;
+		const discountAmount = (consultationFee * discountRate) / 100;
+		const finalFee = consultationFee - discountAmount;
+		
+		// Create a simple patient record with minimal required fields
+		console.log('👤 Creating minimal patient record for guest user');
+		
+		const { data: newPatient, error: patientCreateError } = await supabaseAdmin
+			.from('patients')
+			.insert({
+				user_id: null, // Guest users don't have user_id
+				name: patient_details.name || 'Guest Patient',
+				phone: patient_details.phone || 'Not Provided',
+				age: patient_details.age || 0,
+				gender: patient_details.gender || 'other',
+				cnic: patient_details.cnic || 'Not Provided',
+				history: patient_details.history || null
+			})
+			.select('id')
+			.single();
+		
+		if (patientCreateError) {
+			console.error('❌ Error creating patient record for guest:', patientCreateError);
+			return res.status(500).json({ error: 'Failed to create patient record' });
+		}
+		
+		const patientIdForAppointment = newPatient.id;
+		console.log('✅ Created patient record for guest:', newPatient.id);
+		
+		console.log('📅 Creating appointment for guest patient:', patientIdForAppointment);
+		
+		// Create appointment
+		const { data, error } = await supabaseAdmin
+			.from('appointments')
+			.insert({
+				patient_id: patientIdForAppointment,
+				doctor_id,
+				appointment_date,
+				appointment_time,
+				reason: reason || null,
+				consultation_fee: consultationFee,
+				discount_applied: discountRate,
+				final_fee: finalFee,
+				status: 'pending'
+			})
+			.select(`
+				*, 
+				doctors(name, specialization, degrees, consultation_fee, discount_rate)
+			`)
+			.single();
+		
+		if (error) {
+			console.error('❌ Appointment creation failed:', error);
+			return res.status(500).json({ error: error.message });
+		}
+		
+		console.log('✅ Guest appointment created:', data);
+		
+		// Generate appointment sheet PDF
 		let appointmentSheetUrl = null;
 		let appointmentSheetFilename = null;
 		
@@ -137,11 +197,11 @@ router.post('/guest', async (req, res) => {
 			console.log('📄 Generating appointment sheet PDF...');
 			
 			const pdfBuffer = await generateAppointmentSheetPDF({
-				patientName: patient_details.name,
-				patientAge: patient_details.age,
-				patientGender: patient_details.gender,
-				patientContact: patient_details.phone || 'Not provided',
-				patientId: patient_details.cnic || 'Not provided',
+				patientName: patient_details.name || 'Guest Patient',
+				patientAge: patient_details.age || 'Not Specified',
+				patientGender: patient_details.gender || 'Not Specified',
+				patientContact: patient_details.phone || 'Not Provided',
+				patientId: patient_details.cnic || 'Not Provided',
 				doctorName: doctor.name,
 				doctorSpecialization: doctor.specialization,
 				appointmentDate: appointment_date,
@@ -149,9 +209,7 @@ router.post('/guest', async (req, res) => {
 				reason: reason || null
 			});
 			
-			// Generate unique filename
-			const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-			const filename = `appointment-sheet-${patient_details.name.replace(/\s+/g, '-')}-${timestamp}.pdf`;
+			const filename = generateAppointmentSheetFileName(patient_details.name || 'Guest', data.id);
 			const filePath = `appointment-sheets/${filename}`;
 			
 			// Upload to Supabase storage
@@ -159,36 +217,38 @@ router.post('/guest', async (req, res) => {
 			
 			if (uploadError) {
 				console.error('❌ Failed to upload appointment sheet:', uploadError);
-				return res.status(500).json({ error: 'Failed to generate appointment sheet' });
+			} else {
+				console.log('✅ Appointment sheet uploaded successfully');
+				
+				// Update appointment with sheet URL
+				const { error: updateError } = await supabaseAdmin
+					.from('appointments')
+					.update({ appointment_sheet_url: filePath })
+					.eq('id', data.id);
+				
+				if (updateError) {
+					console.error('❌ Failed to update appointment sheet URL:', updateError);
+				} else {
+					console.log('✅ Appointment sheet URL updated');
+					
+					// Generate signed URL for immediate download
+					const { signedUrl } = await supabaseAdmin.storage
+						.from('appointment-sheets')
+						.createSignedUrl(filePath, 60 * 60 * 24); // 24 hours expiry
+					
+					appointmentSheetUrl = signedUrl;
+					appointmentSheetFilename = filename;
+				}
 			}
-			
-			console.log('✅ Appointment sheet uploaded successfully');
-			
-			// Generate signed URL for immediate download
-			const { signedUrl } = await supabaseAdmin.storage
-				.from('appointment-sheets')
-				.createSignedUrl(filePath, 60 * 60 * 24); // 24 hours expiry
-			
-			appointmentSheetUrl = signedUrl;
-			appointmentSheetFilename = filename;
-			
-			console.log('✅ Appointment sheet ready for download');
-			
 		} catch (pdfError) {
 			console.error('❌ Failed to generate appointment sheet:', pdfError);
-			return res.status(500).json({ error: 'Failed to generate appointment sheet' });
+			// Don't fail the booking if PDF generation fails
 		}
 		
-		// Return success with appointment sheet download info
 		res.json({ 
-			success: true,
-			message: 'Appointment sheet generated successfully',
+			appointment: data,
 			appointment_sheet_url: appointmentSheetUrl,
-			appointment_sheet_filename: appointmentSheetFilename,
-			doctor_name: doctor.name,
-			doctor_specialization: doctor.specialization,
-			appointment_date: appointment_date,
-			appointment_time: appointment_time
+			appointment_sheet_filename: appointmentSheetFilename
 		});
 		
 	} catch (err) {
