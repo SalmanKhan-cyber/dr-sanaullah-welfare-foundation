@@ -89,7 +89,7 @@ router.get('/doctor/me', async (req, res) => {
 		
 		const { data, error } = await supabaseAdmin
 			.from('appointments')
-			.select('*, patients(users(name, email, phone), age, gender, cnic, user_id)')
+			.select('*, appointment_sheet_url, patients(users(name, email, phone), age, gender, cnic, user_id)')
 			.eq('doctor_id', doctor.id)
 			.order('appointment_date', { ascending: true })
 			.order('appointment_time', { ascending: true });
