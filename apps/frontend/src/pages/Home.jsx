@@ -82,7 +82,7 @@ export default function Home() {
 
 	async function fetchSpecialties() {
 		try {
-			const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/specialties/public`);
+			const response = await fetch(`http://localhost:4000/api/specialties/public`);
 			const data = await response.json();
 			setSpecialties(data.specialties || []);
 		} catch (err) {
@@ -92,7 +92,7 @@ export default function Home() {
 
 	async function fetchConditions() {
 		try {
-			const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/conditions/public`);
+			const response = await fetch(`http://localhost:4000/api/conditions/public`);
 			const data = await response.json();
 			setConditions(data.conditions || []);
 		} catch (err) {
@@ -136,10 +136,7 @@ export default function Home() {
 
 	async function fetchDoctors() {
 		try {
-			const apiUrl = import.meta.env.VITE_API_URL || 
-				(import.meta.env.MODE === 'production' 
-					? 'https://your-railway-app.railway.app'
-					: 'http://localhost:4000');
+			const apiUrl = 'http://localhost:4000';
 			const response = await fetch(`${apiUrl}/api/doctors/public`);
 			const data = await response.json();
 			setDoctors(data.doctors || []);

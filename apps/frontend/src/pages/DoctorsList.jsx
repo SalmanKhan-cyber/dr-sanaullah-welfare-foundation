@@ -71,10 +71,7 @@ export default function DoctorsList() {
 		(async () => {
 			setLoading(true);
 			try {
-				const apiUrl = import.meta.env.VITE_API_URL || 
-					(import.meta.env.MODE === 'production' 
-						? 'https://your-railway-app.railway.app'
-						: 'http://localhost:4000');
+				const apiUrl = 'http://localhost:4000';
 				const response = await fetch(`${apiUrl}/api/doctors/public`);
 				const data = await response.json();
 				let doctors = data.doctors || [];

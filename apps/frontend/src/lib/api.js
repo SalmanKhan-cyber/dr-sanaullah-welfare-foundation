@@ -1,10 +1,7 @@
 import { supabase } from './supabase';
 
-// API URL configuration
-const API_URL = import.meta.env.VITE_API_URL || 
-	(import.meta.env.MODE === 'production' 
-		? 'https://your-railway-app.railway.app'  // Replace with your actual Railway URL
-		: 'http://localhost:4000');
+// API URL configuration - Force localhost for development
+const API_URL = 'http://localhost:4000';
 
 // Debug log to verify API URL
 console.log('🔍 API URL being used:', API_URL);
