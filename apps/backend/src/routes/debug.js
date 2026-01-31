@@ -8,7 +8,7 @@ const router = Router();
 
 // Manual trigger to generate appointment sheet for existing appointment
 // POST /api/debug/generate-appointment-sheet/:appointmentId
-router.post('/generate-appointment-sheet/:appointmentId', authMiddleware, async (req, res) => {
+router.post('/generate-appointment-sheet/:appointmentId', async (req, res) => {
 	try {
 		const { appointmentId } = req.params;
 		const userId = req.user.id;
