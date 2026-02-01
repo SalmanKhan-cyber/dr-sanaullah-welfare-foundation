@@ -179,16 +179,16 @@ export default function DoctorsList() {
 			};
 
 			// Always include patient details for appointment sheet generation
-		requestBody.patient_details = {
-			name: patientProfileForm.name || 'Guest Patient',
-			phone: patientProfileForm.phone || 'Not Provided',
-			age: parseInt(patientProfileForm.age) || 0,
-			gender: patientProfileForm.gender || 'other',
-			cnic: patientProfileForm.cnic || 'Not Provided',
-			history: patientProfileForm.history || null
-		};
-		console.log('🔍 Frontend Debug - Sending patient_details:', requestBody.patient_details);
-		console.log('🔍 Frontend Debug - Name value:', patientProfileForm.name);
+			requestBody.patient_details = {
+				name: patientProfileForm.name || 'Guest Patient',
+				phone: patientProfileForm.phone || 'Not Provided',
+				age: parseInt(patientProfileForm.age) || 0,
+				gender: patientProfileForm.gender || 'other',
+				cnic: patientProfileForm.cnic || 'Not Provided',
+				history: patientProfileForm.history || null
+			};
+			console.log('🔍 Frontend Debug - Sending patient_details:', requestBody.patient_details);
+			console.log('🔍 Frontend Debug - Name value:', patientProfileForm.name);
 
 			console.log('🔍 Frontend Debug - Complete request body:', requestBody);
 
