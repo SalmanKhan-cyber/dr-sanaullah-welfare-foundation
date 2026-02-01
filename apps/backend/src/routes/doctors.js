@@ -25,6 +25,7 @@ router.get('/', async (_req, res) => {
 router.get('/me', async (req, res) => {
 	try {
 		const userId = req.user.id;
+		console.log(`🔍 Fetching doctor profile for user: ${userId}`);
 		
 		// First check if profile exists
 		const { data, error } = await supabaseAdmin
@@ -32,6 +33,8 @@ router.get('/me', async (req, res) => {
 			.select('*')
 			.eq('user_id', userId)
 			.single();
+		
+		console.log(`📋 Doctor profile query result:`, { data, error });
 		
 		// If profile doesn't exist, return null instead of error
 		// This allows frontend to show "create profile" option
@@ -41,9 +44,15 @@ router.get('/me', async (req, res) => {
 			return res.json({ doctor: null, profile_missing: true });
 		}
 		
-		if (error) return res.status(400).json({ error: error.message });
+		if (error) {
+			console.error(`❌ Error fetching doctor profile:`, error);
+			return res.status(400).json({ error: error.message });
+		}
+		
+		console.log(`✅ Doctor profile found for user ${userId}:`, data);
 		res.json({ doctor: data });
 	} catch (err) {
+		console.error(`❌ Server error in doctor profile fetch:`, err);
 		res.status(500).json({ error: err.message });
 	}
 });
@@ -53,18 +62,23 @@ router.put('/me', async (req, res) => {
 	try {
 		const userId = req.user.id;
 		const updates = req.body;
+		console.log(`🔍 Updating/creating doctor profile for user: ${userId}`);
+		console.log(`📝 Profile updates:`, updates);
 		
 		// Check if profile exists
-		const { data: existing } = await supabaseAdmin
+		const { data: existing, error: checkError } = await supabaseAdmin
 			.from('doctors')
 			.select('id')
 			.eq('user_id', userId)
 			.single();
 		
+		console.log(`🔍 Existing profile check:`, { existing, checkError });
+		
 		let data;
 		let error;
 		
 		if (existing) {
+			console.log(`📝 Updating existing doctor profile for user: ${userId}`);
 			// Update existing profile
 			const result = await supabaseAdmin
 				.from('doctors')
@@ -75,6 +89,7 @@ router.put('/me', async (req, res) => {
 			data = result.data;
 			error = result.error;
 		} else {
+			console.log(`➕ Creating new doctor profile for user: ${userId}`);
 			// Create new profile (upsert)
 			// Get user's name for default
 			const { data: userData } = await supabaseAdmin
@@ -82,6 +97,8 @@ router.put('/me', async (req, res) => {
 				.select('name')
 				.eq('id', userId)
 				.single();
+			
+			console.log(`👤 User data for default name:`, userData);
 			
 			const result = await supabaseAdmin
 				.from('doctors')
@@ -102,9 +119,17 @@ router.put('/me', async (req, res) => {
 			error = result.error;
 		}
 		
-		if (error) return res.status(400).json({ error: error.message });
+		console.log(`📊 Profile save result:`, { data, error });
+		
+		if (error) {
+			console.error(`❌ Error saving doctor profile:`, error);
+			return res.status(400).json({ error: error.message });
+		}
+		
+		console.log(`✅ Doctor profile saved successfully for user: ${userId}:`, data);
 		res.json({ doctor: data });
 	} catch (err) {
+		console.error(`❌ Server error in doctor profile save:`, err);
 		res.status(500).json({ error: err.message });
 	}
 });
