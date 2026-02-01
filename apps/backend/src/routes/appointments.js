@@ -153,13 +153,11 @@ router.post('/guest', async (req, res) => {
 		const discountAmount = (consultationFee * discountRate) / 100;
 		const finalFee = consultationFee - discountAmount;
 		
-		// Create a simple patient record with minimal required fields
-		console.log('👤 Creating minimal patient record for guest user');
-		
+		// Create patient record for guest user
 		const { data: newPatient, error: patientCreateError } = await supabaseAdmin
 			.from('patients')
 			.insert({
-				user_id: null, // Guest users don't have user_id
+				user_id: '00000000-0000-0000-0000-000000000000', // Special UUID for guest users
 				name: patient_details.name || 'Guest Patient',
 				phone: patient_details.phone || 'Not Provided',
 				age: patient_details.age || 0,
