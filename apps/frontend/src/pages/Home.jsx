@@ -82,7 +82,7 @@ export default function Home() {
 
 	async function fetchSpecialties() {
 		try {
-			const response = await fetch(`${import.meta.env.MODE === 'production' ? 'https://3oqcvri8.up.railway.app' : 'http://localhost:4000'}/api/specialties/public`);
+			const response = await fetch(`${import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://api.drsanaullahwelfarefoundation.com'}/api/specialties/public`);
 			const data = await response.json();
 			setSpecialties(data.specialties || []);
 		} catch (err) {
@@ -92,7 +92,7 @@ export default function Home() {
 
 	async function fetchConditions() {
 		try {
-			const response = await fetch(`${import.meta.env.MODE === 'production' ? 'https://3oqcvri8.up.railway.app' : 'http://localhost:4000'}/api/conditions/public`);
+			const response = await fetch(`${import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://api.drsanaullahwelfarefoundation.com'}/api/conditions/public`);
 			const data = await response.json();
 			setConditions(data.conditions || []);
 		} catch (err) {
@@ -136,10 +136,10 @@ export default function Home() {
 
 	async function fetchDoctors() {
 		try {
-			const apiUrl = import.meta.env.MODE === 'production' 
-				? 'https://3oqcvri8.up.railway.app'
-				: 'http://localhost:4000';
-			const response = await fetch(`${apiUrl}/api/doctors/public`);
+			const API_BASE_URL = import.meta.env.MODE === 'development' 
+  ? 'http://localhost:4000' 
+  : 'https://api.drsanaullahwelfarefoundation.com';
+			const response = await fetch(`${API_BASE_URL}/api/doctors/public`);
 			const data = await response.json();
 			setDoctors(data.doctors || []);
 		} catch (err) {

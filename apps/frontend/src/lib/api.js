@@ -1,10 +1,13 @@
 import { supabase } from './supabase';
 
-// API URL configuration - Force localhost for debugging
-const API_URL = 'http://localhost:4000';
+// Dynamic API URL configuration based on environment
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.MODE === 'development' 
+    ? 'http://localhost:4000' 
+    : 'https://api.drsanaullahwelfarefoundation.com');
 
 // Debug log to verify API URL
-console.log('🔍 API URL being used:', API_URL);
+console.log('🔍 API URL being used:', API_BASE_URL);
 
 // Simple in-memory cache for API responses (10 minute TTL for better performance)
 const cache = new Map();
@@ -130,12 +133,12 @@ export async function apiRequest(endpoint, options = {}, retryCount = 0) {
 				body = JSON.stringify(body);
 			}
 			
-			console.log('🔍 Making request to:', `${API_URL}${endpoint}`);
+			console.log('🔍 Making request to:', `${API_BASE_URL}${endpoint}`);
 			console.log('🔍 Request method:', options.method || 'GET');
 			console.log('🔍 Request headers:', headers);
 			console.log('🔍 Request body:', body);
 			
-			const response = await fetch(`${API_URL}${endpoint}`, {
+			const response = await fetch(`${API_BASE_URL}${endpoint}`, {
 				...options,
 				body,
 				headers

@@ -36,7 +36,7 @@ import homeServicesRoutes from './routes/homeServices.js';
 
 const app = express();
 // Railway-compatible PORT handling
-const PORT = process.env.PORT || 4000;
+const PORT = Number(process.env.PORT) || 4000;
 
 // Trust proxy for Cloudflare and other reverse proxies
 app.set("trust proxy", true);
@@ -44,16 +44,11 @@ app.set("trust proxy", true);
 // Production-safe CORS configuration - BEFORE all routes
 const corsOptions = {
   origin: [
-    'https://drsanaullahwelfarefoundation.com',
-    'https://www.drsanaullahwelfarefoundation.com',
-    // Development URLs
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:5174'
+    "https://drsanaullahwelfarefoundation.com",
+    "https://www.drsanaullahwelfarefoundation.com"
   ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 };
 
@@ -994,6 +989,6 @@ app.use((err, _req, res, _next) => {
 	});
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
 	console.log(`Server running on port ${PORT}`);
 });
