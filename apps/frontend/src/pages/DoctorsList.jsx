@@ -179,7 +179,7 @@ export default function DoctorsList() {
 			};
 
 			// Always include patient details for appointment sheet generation
-			requestBody.patient_details = {
+			const patientDetails = {
 				name: patientProfileForm.name || 'Guest Patient',
 				phone: patientProfileForm.phone || 'Not Provided',
 				age: parseInt(patientProfileForm.age) || 0,
@@ -187,14 +187,19 @@ export default function DoctorsList() {
 				cnic: patientProfileForm.cnic || 'Not Provided',
 				history: patientProfileForm.history || null
 			};
-			console.log('🔍 Frontend Debug - Sending patient_details:', requestBody.patient_details);
+			
+			const finalRequestBody = {
+				...requestBody,
+				patient_details: patientDetails
+			};
+			
+			console.log('🔍 Frontend Debug - Sending patient_details:', patientDetails);
 			console.log('🔍 Frontend Debug - Name value:', patientProfileForm.name);
-
-			console.log('🔍 Frontend Debug - Complete request body:', requestBody);
+			console.log('🔍 Frontend Debug - Complete request body:', finalRequestBody);
 
 			const response = await apiRequest('/api/appointments/guest', {
 				method: 'POST',
-				body: JSON.stringify(requestBody)
+				body: JSON.stringify(finalRequestBody)
 			});
 			
 			// Handle appointment sheet download if available
