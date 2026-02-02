@@ -136,7 +136,7 @@ export default function Login() {
 			console.error('Error fetching role from users table:', err);
 		}
 		
-		// Process role selection
+		// Process role selection - automatically select primary role
 		try {
 			// Get role from users table (authoritative source)
 			let dbRole = role;
@@ -160,41 +160,34 @@ export default function Login() {
 				return r.replace(/-/g, '_').toLowerCase();
 			};
 			
-			// If user selected a specific role for login, prioritize it
-			if (selectedLoginRole) {
+			// PRIORITY 1: Use database role as primary (most reliable)
+			if (dbRole) {
+				role = dbRole;
+				console.log('✅ Using primary database role:', role);
+			}
+			// PRIORITY 2: If user selected a specific role for login, verify and use it
+			else if (selectedLoginRole) {
 				const normalizedSelected = normalizeRole(selectedLoginRole);
-				const normalizedDbRole = normalizeRole(dbRole);
 				const normalizedUserRoles = userRoles.map(r => normalizeRole(r.role));
 				
 				// Convert selected role to database format (hyphen to underscore)
 				const selectedRoleDbFormat = selectedLoginRole.replace(/-/g, '_');
 				
-				// Check if selected role matches database role (most reliable check)
-				const matchesDbRole = normalizedDbRole === normalizedSelected;
-				// Also check userRoles array for multiple role scenarios
+				// Check if user has this role in their available roles
 				const hasSelectedRole = normalizedUserRoles.includes(normalizedSelected);
 				
 				console.log('🔍 Role selection check:', {
 					selectedLoginRole,
 					selectedRoleDbFormat,
-					dbRole,
-					matchesDbRole,
 					hasSelectedRole,
 					userRoles: userRoles.map(r => r.role)
 				});
 				
-				// PRIORITY 1: If selected role matches database role, use it directly
-				if (matchesDbRole) {
-					role = selectedRoleDbFormat;
-					console.log('✅ Using selected login role (matches database):', role);
-				}
-				// PRIORITY 2: If user has this role in their available roles, switch to it
-				else if (hasSelectedRole) {
+				if (hasSelectedRole) {
 					role = selectedRoleDbFormat;
 					console.log('✅ Using selected login role (found in available roles):', role);
 					
 					// Update database role to match selection
-					console.log(`🔄 Switching role from ${dbRole} to ${role}`);
 					try {
 						await apiRequest('/api/auth/set-role', {
 							method: 'POST',
@@ -204,93 +197,30 @@ export default function Login() {
 								email: freshUser?.email || data.user.email
 							})
 						});
-						console.log('✅ Role switched successfully');
+						console.log('✅ Role updated in database');
 					} catch (switchErr) {
-						console.warn('⚠️ Could not switch role, but continuing:', switchErr);
+						console.warn('⚠️ Could not update role, but continuing:', switchErr);
 					}
+				} else {
+					// User doesn't have this role, deny access
+					throw new Error(`You do not have access to the ${selectedLoginRole} dashboard. Please contact an administrator.`);
 				}
-				// PRIORITY 3: If database role exists but doesn't match, trust the user's selection and switch
-				else if (dbRole) {
-					console.log(`🔄 User selected ${selectedLoginRole} but database has ${dbRole}. Switching to selected role.`);
-					role = selectedRoleDbFormat;
-					
-					// Update database to match user's selection
-					try {
-						await apiRequest('/api/auth/set-role', {
-							method: 'POST',
-							body: JSON.stringify({ 
-								userId: freshUser?.id || data.user.id, 
-								role: role,
-								email: freshUser?.email || data.user.email
-							})
-						});
-						console.log('✅ Role updated to match user selection');
-					} catch (switchErr) {
-						console.warn('⚠️ Could not update role, but continuing with selection:', switchErr);
-						// Continue with the selected role anyway
-					}
-				}
-				// PRIORITY 4: No database role, just use the selection
-				else {
-					role = selectedRoleDbFormat;
-					console.log('✅ Using selected login role (no database role found):', role);
-					
-					// Try to set it in database
-					try {
-						await apiRequest('/api/auth/set-role', {
-							method: 'POST',
-							body: JSON.stringify({ 
-								userId: freshUser?.id || data.user.id, 
-								role: role,
-								email: freshUser?.email || data.user.email
-							})
-						});
-						console.log('✅ Role set in database');
-					} catch (setErr) {
-						console.warn('⚠️ Could not set role in database:', setErr);
-					}
-				}
-			} else {
-				// If user has multiple roles and didn't select one
-				if (userRoles.length > 1) {
-					// Show role selection for multiple role combinations
-					setAvailableRoles(userRoles);
-					setShowRoleSelection(true);
-					setSuccess('Please select which dashboard you want to access');
-					setLoading(false);
-					return;
-				} else if (userRoles.length === 1) {
-					// If only one role, use it
-					role = userRoles[0].role;
-					console.log('✅ Using single available role:', role);
-				} else if (userRoles.length === 0) {
-					// No roles found in role tables, use primary role from users table
-					console.log('⚠️ No roles found in role tables, using primary role:', dbRole);
-					role = dbRole || role || 'patient';
-				}
+			}
+			// PRIORITY 3: Use first available role if user has roles
+			else if (userRoles.length > 0) {
+				// Find primary role or use first available
+				const primaryRole = userRoles.find(r => r.isPrimary) || userRoles[0];
+				role = primaryRole.role;
+				console.log('✅ Using available role:', role);
+			}
+			// PRIORITY 4: Fallback to metadata role or patient
+			else {
+				role = role || 'patient';
+				console.log('✅ Using fallback role:', role);
 			}
 		} catch (rolesErr) {
 			console.warn('Could not process user roles, using default:', rolesErr);
-			// If user selected a role and it matches database, use it; otherwise use database role
-			if (selectedLoginRole) {
-				// Try to get role from database
-				try {
-					const { data: userData } = await supabase
-						.from('users')
-						.select('role')
-						.eq('id', freshUser?.id || data.user.id)
-						.single();
-					if (userData?.role) {
-						role = userData.role;
-					} else {
-						role = selectedLoginRole;
-					}
-				} catch {
-					role = selectedLoginRole;
-				}
-			} else {
-				role = role || 'patient';
-			}
+			role = role || 'patient';
 		}
 		
 		// Convert role to URL format (underscore to hyphen for URLs)
@@ -810,7 +740,20 @@ export default function Login() {
 				throw new Error('User not found');
 			}
 			
-			// Update the user's role in the users table temporarily for this session
+			// Verify user has access to this role
+			try {
+				const rolesRes = await apiRequest('/api/auth/user-roles');
+				const userRoles = rolesRes.roles || [];
+				const hasRole = userRoles.some(r => r.role === role);
+				
+				if (!hasRole) {
+					throw new Error(`You do not have access to the ${role} dashboard. Please contact an administrator.`);
+				}
+			} catch (roleCheckErr) {
+				console.warn('Could not verify role access, continuing anyway:', roleCheckErr);
+			}
+			
+			// Update the user's role in the users table
 			try {
 				await apiRequest('/api/auth/set-role', {
 					method: 'POST',
@@ -819,6 +762,7 @@ export default function Login() {
 						role: role 
 					})
 				});
+				console.log('✅ Role updated successfully');
 			} catch (err) {
 				console.warn('Could not update role, continuing anyway:', err);
 			}
@@ -835,7 +779,7 @@ export default function Login() {
 				navigate(`/dashboard/${dashboardPath}`);
 			}, 500);
 		} catch (err) {
-			setError('Failed to select role. Please try again.');
+			setError(err.message || 'Failed to select role. Please try again.');
 			setLoading(false);
 		}
 	}
@@ -1519,8 +1463,8 @@ export default function Login() {
 				</div>
 			</div>
 
-			{/* Role Selection Modal (after login with multiple roles) */}
-			{showRoleSelection && availableRoles.length > 0 && (
+			{/* Role Selection Modal (only show when user explicitly has multiple active roles) */}
+			{showRoleSelection && availableRoles.length > 1 && (
 				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
 					<div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
 						<h2 className="text-2xl font-bold text-gray-900 mb-2">Select Dashboard</h2>
@@ -1567,10 +1511,20 @@ export default function Login() {
 						</div>
 						
 						{error && (
-							<div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-								{error}
+							<div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+								<p className="text-sm text-red-600">{error}</p>
 							</div>
 						)}
+						
+						<div className="mt-6 flex justify-end">
+							<button
+								onClick={() => setShowRoleSelection(false)}
+								disabled={loading}
+								className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:opacity-50"
+							>
+								Cancel
+							</button>
+						</div>
 					</div>
 				</div>
 			)}
