@@ -174,7 +174,7 @@ export default function InClinic() {
 				};
 			}
 
-			const response = await apiRequest('/api/appointments/guest', {
+			const response = await apiRequest('/api/appointments', {
 				method: 'POST',
 				body: JSON.stringify(requestBody)
 			});

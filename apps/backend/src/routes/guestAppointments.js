@@ -4,6 +4,15 @@ import { generateAppointmentSheet } from '../lib/appointmentSheetGenerator.js';
 
 const router = express.Router();
 
+// Health check for guest routes
+router.get('/health', (req, res) => {
+	res.json({ 
+		status: 'OK', 
+		message: 'Guest appointments router is working',
+		timestamp: new Date().toISOString()
+	});
+});
+
 // Public guest booking endpoint (no authentication required)
 router.post('/', async (req, res) => {
 	try {
