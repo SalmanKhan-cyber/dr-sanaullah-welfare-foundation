@@ -406,49 +406,47 @@ router.post('/', async (req, res) => {
 		// Foreign key constraint will reference patients(id) or patients(user_id) accordingly
 		let patientIdForAppointment = patient.id || patient.user_id;
 		
-		// For guest users, create a patient record first
+		// For guest users, DO NOT create patient records - just use provided details for appointment sheet
 		if (!userId && patient_details) {
-			console.log('👤 Creating patient record for guest user');
+			console.log('👤 Processing guest booking - NO account creation');
 			
-			const { data: newPatient, error: patientCreateError } = await supabaseAdmin
-				.from('patients')
-				.insert({
-					user_id: null, // Guest users don't have user_id
-					name: patient.name,
-					phone: patient.phone,
-					age: patient.age,
-					gender: patient.gender,
-					cnic: patient.cnic,
-					history: patient_details.history || null
-				})
-				.select('id')
-				.single();
-			
-			if (patientCreateError) {
-				console.error('❌ Error creating patient record for guest:', patientCreateError);
-				return res.status(500).json({ error: 'Failed to create patient record' });
-			}
-			
-			patientIdForAppointment = newPatient.id;
-			console.log('✅ Created patient record for guest:', newPatient.id);
+			// Use a temporary ID for the appointment record, but don't create patient account
+			patientIdForAppointment = null; // Will be handled differently for guest users
+			console.log('✅ Guest booking - no patient account created');
 		}
 		
 		console.log('📅 Creating appointment - patient:', { id: patient.id, user_id: patient.user_id, using: patientIdForAppointment });
 		
 		// Create appointment
+		const appointmentData = {
+			doctor_id,
+			appointment_date,
+			appointment_time,
+			reason: reason || null,
+			consultation_fee: consultationFee,
+			discount_applied: discountRate,
+			final_fee: finalFee,
+			status: 'pending'
+		};
+		
+		// For guest users, add patient details directly to appointment
+		if (!userId && patient_details) {
+			appointmentData.patient_id = null; // No patient record
+			appointmentData.guest_patient_name = patient_details.name;
+			appointmentData.guest_patient_phone = patient_details.phone;
+			appointmentData.guest_patient_age = patient_details.age;
+			appointmentData.guest_patient_gender = patient_details.gender;
+			appointmentData.guest_patient_cnic = patient_details.cnic;
+			appointmentData.guest_patient_history = patient_details.history || null;
+			console.log('👤 Guest appointment data prepared:', appointmentData);
+		} else {
+			// Authenticated user - use patient_id
+			appointmentData.patient_id = patientIdForAppointment;
+		}
+		
 		const { data, error } = await supabaseAdmin
 			.from('appointments')
-			.insert({
-				patient_id: patientIdForAppointment, // Uses patient.id if migrated, patient.user_id if original
-				doctor_id,
-				appointment_date,
-				appointment_time,
-				reason: reason || null,
-				consultation_fee: consultationFee,
-				discount_applied: discountRate,
-				final_fee: finalFee,
-				status: 'pending'
-			})
+			.insert(appointmentData)
 			.select('*, doctors(name, specialization)')
 			.single();
 		
@@ -478,16 +476,87 @@ router.post('/', async (req, res) => {
 			});
 		}
 		
-		// Generate patient file for the appointment
+		// Generate patient file for the appointment (only for authenticated users)
+		if (userId) {
+			try {
+				console.log('📄 Generating patient file for appointment:', data.id);
+				
+				// Get complete patient data
+				const { data: completePatient } = await supabaseAdmin
+					.from('patients')
+					.select('*')
+					.eq('user_id', userId)
+					.single();
+				
+				// Get complete doctor data
+				const { data: completeDoctor } = await supabaseAdmin
+					.from('doctors')
+					.select('*')
+					.eq('id', doctor_id)
+					.single();
+				
+				// Prepare appointment data for PDF generation
+				const appointmentData = {
+					patient: {
+						...completePatient,
+						email: patient.email
+					},
+					doctor: completeDoctor || { name: data.doctors?.name },
+					appointment: {
+						...data,
+						date: appointment_date,
+						time: appointment_time
+					}
+				};
+				
+				// Generate patient file PDF
+				const pdfBuffer = await generatePatientFilePDF(appointmentData);
+				
+				// Generate filename
+				const fileName = generatePatientFileName(appointmentData.patient, appointmentData.appointment);
+				
+				// Upload to storage
+				const fileUrl = await uploadFile('patient-files', pdfBuffer, fileName, 'application/pdf');
+				
+				// Update appointment with patient file URL
+				await supabaseAdmin
+					.from('appointments')
+					.update({ patient_file_url: fileUrl })
+					.eq('id', data.id);
+				
+				console.log('✅ Patient file generated and uploaded:', fileUrl);
+			} catch (fileError) {
+				console.error('❌ Error generating patient file:', fileError);
+				// Don't fail the appointment booking if file generation fails
+			}
+		}
+		
+		// Generate appointment sheet for immediate download (for all users)
 		try {
-			console.log('📄 Generating patient file for appointment:', data.id);
+			console.log('📋 Generating appointment sheet for immediate download:', data.id);
 			
-			// Get complete patient data
-			const { data: completePatient } = await supabaseAdmin
-				.from('patients')
-				.select('*')
-				.eq('user_id', userId)
-				.single();
+			// Get patient data - handle both guest and authenticated users
+			let completePatient;
+			if (!userId && patient_details) {
+				// Guest user - use provided patient details
+				completePatient = {
+					name: patient_details.name,
+					phone: patient_details.phone,
+					age: patient_details.age,
+					gender: patient_details.gender,
+					cnic: patient_details.cnic,
+					history: patient_details.history || null
+				};
+				console.log('👤 Using guest patient details for appointment sheet:', completePatient);
+			} else if (userId) {
+				// Authenticated user - get from database
+				const { data: dbPatient } = await supabaseAdmin
+					.from('patients')
+					.select('*')
+					.eq('user_id', userId)
+					.single();
+				completePatient = dbPatient;
+			}
 			
 			// Get complete doctor data
 			const { data: completeDoctor } = await supabaseAdmin
@@ -498,38 +567,25 @@ router.post('/', async (req, res) => {
 			
 			// Prepare appointment data for PDF generation
 			const appointmentData = {
-				patient: {
-					...completePatient,
-					email: patient.email
-				},
-				doctor: completeDoctor || { name: data.doctors?.name },
-				appointment: {
-					...data,
-					date: appointment_date,
-					time: appointment_time
-				}
+				id: data.id,
+				appointment_date: data.appointment_date,
+				appointment_time: data.appointment_time,
+				reason: data.reason,
+				status: data.status,
+				consultation_fee: data.consultation_fee,
+				final_fee: data.final_fee,
+				created_at: data.created_at,
+				patient: completePatient,
+				doctor: completeDoctor || { name: data.doctors?.name }
 			};
 			
-			// Generate patient file PDF
-			const pdfBuffer = await generatePatientFilePDF(appointmentData);
+			// Generate appointment sheet
+			const { filename, filePath } = await generateAppointmentSheet(appointmentData);
 			
-			// Generate filename
-			const fileName = generatePatientFileName(appointmentData.patient, appointmentData.appointment);
-			
-			// Upload to storage
-			const fileUrl = await uploadFile('patient-files', pdfBuffer, fileName, 'application/pdf');
-			
-			// Update appointment with patient file URL
-			await supabaseAdmin
-				.from('appointments')
-				.update({ patient_file_url: fileUrl })
-				.eq('id', data.id);
-			
-			console.log('✅ Patient file generated and uploaded:', fileUrl);
-		} catch (fileError) {
-			console.error('❌ Error generating patient file:', fileError);
-			// Don't fail the appointment booking if file generation fails
-		}
+			// Generate signed URL for immediate download
+			const { signedUrl } = await supabaseAdmin.storage
+				.from('appointment-sheets')
+				.createSignedUrl(filePath, 60 * 60 * 24); // 24 hours expiry
 			
 			// Update appointment with sheet URL
 			await supabaseAdmin
