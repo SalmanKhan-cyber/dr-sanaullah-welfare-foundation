@@ -2,10 +2,11 @@ import express from 'express';
 import { supabaseAdmin } from '../lib/supabase.js';
 import { generateAppointmentSheetPDF, generateAppointmentSheetFileName } from '../lib/appointmentSheetGenerator.js';
 
-const router = express.Router();
+// FORCE REDEPLOY - NEW VARIABLE NAME
+const guestRouter = express.Router();
 
 // Health check for guest routes
-router.get('/health', (req, res) => {
+guestRouter.get('/health', (req, res) => {
 	console.log('🔍 Guest appointments health check accessed - VERSION 3.0 FINAL');
 	res.json({ 
 		status: 'OK', 
@@ -16,7 +17,7 @@ router.get('/health', (req, res) => {
 });
 
 // Test endpoint to verify routing
-router.get('/test', (req, res) => {
+guestRouter.get('/test', (req, res) => {
 	console.log('🔍 Guest appointments test endpoint accessed');
 	res.json({ 
 		status: 'OK', 
@@ -27,7 +28,7 @@ router.get('/test', (req, res) => {
 
 // Public guest booking endpoint (no authentication required)
 // VERSION 3.0 FINAL - All variable conflicts resolved
-router.post('/', async (req, res) => {
+guestRouter.post('/', async (req, res) => {
 	console.log('🔍 Guest appointments endpoint accessed - VERSION 3.0 FINAL'); // Force redeploy
 	try {
 		const { doctor_id, appointment_date, appointment_time, reason, patient_details } = req.body || {};
@@ -248,4 +249,4 @@ router.post('/', async (req, res) => {
 	}
 });
 
-export default router;
+export default guestRouter;
