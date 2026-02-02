@@ -6,11 +6,12 @@ const router = express.Router();
 
 // Health check for guest routes
 router.get('/health', (req, res) => {
-	console.log('🔍 Guest appointments health check accessed');
+	console.log('🔍 Guest appointments health check accessed - VERSION 3.0 FINAL');
 	res.json({ 
 		status: 'OK', 
-		message: 'Guest appointments router is working',
-		timestamp: new Date().toISOString()
+		message: 'Guest appointments router is working - VERSION 3.0 FINAL',
+		timestamp: new Date().toISOString(),
+		version: '3.0.0'
 	});
 });
 
@@ -25,8 +26,9 @@ router.get('/test', (req, res) => {
 });
 
 // Public guest booking endpoint (no authentication required)
+// VERSION 3.0 FINAL - All variable conflicts resolved
 router.post('/', async (req, res) => {
-	console.log('🔍 Guest appointments endpoint accessed - VERSION 2.0'); // Force redeploy
+	console.log('🔍 Guest appointments endpoint accessed - VERSION 3.0 FINAL'); // Force redeploy
 	try {
 		const { doctor_id, appointment_date, appointment_time, reason, patient_details } = req.body || {};
 		
