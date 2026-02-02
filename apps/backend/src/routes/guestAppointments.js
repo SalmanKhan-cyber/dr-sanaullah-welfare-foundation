@@ -76,7 +76,24 @@ router.post('/', async (req, res) => {
 		const finalFee = consultationFee - discountAmount;
 		
 		// Create appointment record with guest patient details (no patient account creation)
-		const { data, error } = await supabaseAdmin
+		console.log('🔍 Creating appointment with data:', {
+			patient_id: null,
+			doctor_id: doctor_id,
+			appointment_date: appointment_date,
+			appointment_time: appointment_time,
+			reason: reason || null,
+			consultation_fee: finalFee,
+			payment_status: 'pending',
+			status: 'scheduled',
+			guest_patient_name: patient_details.name,
+			guest_patient_phone: patient_details.phone,
+			guest_patient_age: patient_details.age,
+			guest_patient_gender: patient_details.gender,
+			guest_patient_cnic: patient_details.cnic,
+			guest_patient_history: patient_details.history || null
+		});
+		
+		const { data: appointmentData, error: appointmentError } = await supabaseAdmin
 			.from('appointments')
 			.insert({
 				patient_id: null, // No patient record for guests
@@ -116,12 +133,17 @@ router.post('/', async (req, res) => {
 			`)
 			.single();
 		
-		if (error) {
-			console.error('❌ Error creating appointment:', error);
-			return res.status(500).json({ error: 'Failed to create appointment' });
+		if (appointmentError) {
+			console.error('❌ Error creating appointment:', appointmentError);
+			console.error('❌ Error details:', appointmentError.details);
+			console.error('❌ Error hint:', appointmentError.hint);
+			return res.status(500).json({ error: 'Failed to create appointment: ' + appointmentError.message });
 		}
 		
-		console.log('✅ Guest appointment created successfully:', data);
+		console.log('✅ Guest appointment created successfully:', appointmentData);
+		
+		// Use appointmentData instead of data for the rest of the function
+		const data = appointmentData;
 		
 		// Generate appointment sheet PDF
 		let appointmentSheetUrl = null;
