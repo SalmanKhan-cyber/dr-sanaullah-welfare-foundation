@@ -154,7 +154,7 @@ router.post('/', async (req, res) => {
 			console.log('🔍 Guest appointment data:', data);
 			
 			// Prepare appointment data for PDF generation using guest details
-			const appointmentData = {
+			const pdfAppointmentData = {
 				patient: {
 					name: data.guest_patient_name,
 					phone: data.guest_patient_phone,
@@ -177,14 +177,14 @@ router.post('/', async (req, res) => {
 				appointmentId: data.id
 			};
 			
-			console.log('🔍 Appointment data for PDF:', appointmentData);
+			console.log('🔍 Appointment data for PDF:', pdfAppointmentData);
 			
 			// Generate PDF buffer
-			const pdfBuffer = await generateAppointmentSheetPDF(appointmentData);
+			const pdfBuffer = await generateAppointmentSheetPDF(pdfAppointmentData);
 			console.log('🔍 PDF buffer generated, size:', pdfBuffer.length);
 			
 			// Generate filename
-			const filename = generateAppointmentSheetFileName(appointmentData.patient, data.id);
+			const filename = generateAppointmentSheetFileName(pdfAppointmentData.patient, data.id);
 			const filePath = `appointment-sheets/${filename}`;
 			console.log('🔍 Generated filename:', filename);
 			
