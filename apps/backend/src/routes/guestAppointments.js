@@ -26,6 +26,7 @@ router.get('/test', (req, res) => {
 
 // Public guest booking endpoint (no authentication required)
 router.post('/', async (req, res) => {
+	console.log('🔍 Guest appointments endpoint accessed - VERSION 2.0'); // Force redeploy
 	try {
 		const { doctor_id, appointment_date, appointment_time, reason, patient_details } = req.body || {};
 		
@@ -49,13 +50,13 @@ router.post('/', async (req, res) => {
 			};
 			console.log('🔍 Created minimal patient_details:', patient_details);
 		}
-		
+
 		// Check if name exists, if not use default
 		if (!patient_details.name || patient_details.name.trim() === '') {
 			patient_details.name = 'Guest Patient';
 			console.log('🔍 Using default name for patient');
 		}
-		
+
 		console.log('👤 Processing guest booking with patient details:', patient_details);
 		
 		// Get doctor details for fee calculation
@@ -142,8 +143,8 @@ router.post('/', async (req, res) => {
 		
 		console.log('✅ Guest appointment created successfully:', appointmentData);
 		
-		// Use appointmentData instead of data for the rest of the function
-		const data = appointmentData;
+		// Use appointmentData for the rest of the function instead of redeclaring data
+		const appointmentRecord = appointmentData;
 		
 		// Generate appointment sheet PDF
 		let appointmentSheetUrl = null;
@@ -151,30 +152,30 @@ router.post('/', async (req, res) => {
 		
 		try {
 			console.log('📄 Generating appointment sheet PDF for guest...');
-			console.log('🔍 Guest appointment data:', data);
+			console.log('🔍 Guest appointment data:', appointmentRecord);
 			
 			// Prepare appointment data for PDF generation using guest details
 			const pdfAppointmentData = {
 				patient: {
-					name: data.guest_patient_name,
-					phone: data.guest_patient_phone,
-					age: data.guest_patient_age,
-					gender: data.guest_patient_gender,
-					cnic: data.guest_patient_cnic,
-					history: data.guest_patient_history
+					name: appointmentRecord.guest_patient_name,
+					phone: appointmentRecord.guest_patient_phone,
+					age: appointmentRecord.guest_patient_age,
+					gender: appointmentRecord.guest_patient_gender,
+					cnic: appointmentRecord.guest_patient_cnic,
+					history: appointmentRecord.guest_patient_history
 				},
 				doctor: {
 					name: doctor.name,
 					specialization: doctor.specialization
 				},
 				appointment: {
-					date: data.appointment_date,
-					time: data.appointment_time,
-					reason: data.reason,
-					status: data.status,
-					consultation_fee: data.consultation_fee
+					date: appointmentRecord.appointment_date,
+					time: appointmentRecord.appointment_time,
+					reason: appointmentRecord.reason,
+					status: appointmentRecord.status,
+					consultation_fee: appointmentRecord.consultation_fee
 				},
-				appointmentId: data.id
+				appointmentId: appointmentRecord.id
 			};
 			
 			console.log('🔍 Appointment data for PDF:', pdfAppointmentData);
@@ -184,7 +185,7 @@ router.post('/', async (req, res) => {
 			console.log('🔍 PDF buffer generated, size:', pdfBuffer.length);
 			
 			// Generate filename
-			const filename = generateAppointmentSheetFileName(pdfAppointmentData.patient, data.id);
+			const filename = generateAppointmentSheetFileName(pdfAppointmentData.patient, appointmentRecord.id);
 			const filePath = `appointment-sheets/${filename}`;
 			console.log('🔍 Generated filename:', filename);
 			
@@ -217,7 +218,7 @@ router.post('/', async (req, res) => {
 			await supabaseAdmin
 				.from('appointments')
 				.update({ appointment_sheet_url: signedUrl })
-				.eq('id', data.id);
+				.eq('id', appointmentRecord.id);
 			
 			console.log('✅ Appointment sheet generated and uploaded:', signedUrl);
 		} catch (pdfError) {
@@ -228,13 +229,13 @@ router.post('/', async (req, res) => {
 		}
 		
 		console.log('🔍 Final response data:', { 
-			appointment: data,
+			appointment: appointmentRecord,
 			appointment_sheet_url: appointmentSheetUrl,
 			appointment_sheet_filename: appointmentSheetFilename
 		});
 		
 		res.json({ 
-			appointment: data,
+			appointment: appointmentRecord,
 			appointment_sheet_url: appointmentSheetUrl,
 			appointment_sheet_filename: appointmentSheetFilename
 		});
