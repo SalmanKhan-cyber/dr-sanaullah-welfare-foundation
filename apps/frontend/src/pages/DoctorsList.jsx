@@ -204,12 +204,17 @@ export default function DoctorsList() {
 			
 			// Handle appointment sheet download if available
 			if (response.appointment_sheet_url) {
+				console.log('🔍 Downloading appointment sheet:', response.appointment_sheet_url);
 				const link = document.createElement('a');
 				link.href = response.appointment_sheet_url;
 				link.download = response.appointment_sheet_filename || 'appointment-sheet.pdf';
+				link.target = '_blank'; // Open in new tab if download fails
 				document.body.appendChild(link);
 				link.click();
 				document.body.removeChild(link);
+				console.log('✅ Appointment sheet download triggered');
+			} else {
+				console.log('⚠️ No appointment sheet URL in response');
 			}
 
 			alert('Appointment booked successfully! Your appointment sheet has been downloaded.');
@@ -217,8 +222,15 @@ export default function DoctorsList() {
 			setAppointmentForm({ appointment_date: '', appointment_time: '', reason: '' });
 			setShowProfileForm(false);
 			setBookingStep('details');
-			// Optionally redirect to patient dashboard
-			navigate('/dashboard/patient');
+			
+			// For guest users, DON'T navigate to dashboard - just reset and stay on page
+			if (!isAuthenticated) {
+				console.log('👤 Guest user - staying on booking page');
+				// Don't navigate anywhere for guest users
+			} else {
+				console.log('🔐 Authenticated user - navigating to dashboard');
+				navigate('/dashboard/patient');
+			}
 		} catch (err) {
 			// Only show profile form for authenticated users with profile issues
 			if (isAuthenticated && err.message?.includes('Patient profile not found')) {

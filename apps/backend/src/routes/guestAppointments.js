@@ -118,6 +118,7 @@ router.post('/', async (req, res) => {
 		
 		try {
 			console.log('📄 Generating appointment sheet PDF for guest...');
+			console.log('🔍 Guest appointment data:', data);
 			
 			// Prepare appointment data for PDF generation using guest details
 			const appointmentData = {
@@ -143,13 +144,18 @@ router.post('/', async (req, res) => {
 				}
 			};
 			
+			console.log('🔍 Appointment data for PDF:', appointmentData);
+			
 			// Generate PDF
 			const { filename, filePath } = await generateAppointmentSheet(appointmentData);
+			console.log('🔍 PDF generated:', { filename, filePath });
 			
 			// Generate signed URL for immediate download
 			const { signedUrl } = await supabaseAdmin.storage
 				.from('appointment-sheets')
 				.createSignedUrl(filePath, 60 * 60 * 24); // 24 hours expiry
+			
+			console.log('🔍 Signed URL generated:', signedUrl);
 			
 			appointmentSheetUrl = signedUrl;
 			appointmentSheetFilename = filename;
@@ -163,8 +169,16 @@ router.post('/', async (req, res) => {
 			console.log('✅ Appointment sheet generated and uploaded:', signedUrl);
 		} catch (pdfError) {
 			console.error('❌ Failed to generate appointment sheet:', pdfError);
+			console.error('❌ PDF Error details:', pdfError.message);
+			console.error('❌ PDF Error stack:', pdfError.stack);
 			// Don't fail the booking if PDF generation fails
 		}
+		
+		console.log('🔍 Final response data:', { 
+			appointment: data,
+			appointment_sheet_url: appointmentSheetUrl,
+			appointment_sheet_filename: appointmentSheetFilename
+		});
 		
 		res.json({ 
 			appointment: data,
