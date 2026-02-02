@@ -285,7 +285,7 @@ router.post('/', async (req, res) => {
 		
 		let patient = null;
 		
-		// Handle guest users (no authentication)
+		// Handle guest users (no authentication) - PRIORITY 1
 		if (!userId && patient_details) {
 			console.log('👤 Processing guest booking with patient details:', patient_details);
 			
@@ -298,10 +298,9 @@ router.post('/', async (req, res) => {
 				cnic: patient_details.cnic,
 				user_id: null // Guest users don't have a user_id
 			};
-		} else {
+		} else if (userId) {
 			// Authenticated user - find existing patient profile
-			// Verify patient exists and get the correct patient_id to use
-			// Handle both cases: constraint might reference patients(user_id) or patients(id)
+			console.log('🔐 Processing authenticated user booking for userId:', userId);
 			
 			// Try to find patient profile (with retry if not found immediately - handles race condition)
 			for (let attempt = 0; attempt < 3; attempt++) {
@@ -330,6 +329,11 @@ router.post('/', async (req, res) => {
 					error: 'Patient profile not found. Please complete your profile first and wait a moment before booking.' 
 				});
 			}
+		} else {
+			// No userId and no patient_details - invalid request
+			return res.status(400).json({ 
+				error: 'Missing patient information. Please provide patient details.' 
+			});
 		}
 		
 		// Verify profile has required fields
