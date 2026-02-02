@@ -197,7 +197,7 @@ export default function DoctorsList() {
 			console.log('🔍 Frontend Debug - Name value:', patientProfileForm.name);
 			console.log('🔍 Frontend Debug - Complete request body:', finalRequestBody);
 
-			const response = await apiRequest('/api/appointments', {
+			const response = await apiRequest('/api/appointments/guest', {
 				method: 'POST',
 				body: JSON.stringify(finalRequestBody)
 			});

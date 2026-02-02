@@ -968,7 +968,7 @@ app.use('/api/certificates', authMiddleware, rbac(['student','teacher','admin'])
 app.use('/api/doctors/public', doctorRoutes); // Public doctors endpoint (must be before authenticated routes)
 app.use('/api/doctors', authMiddleware, rbac(['patient','admin','doctor']), doctorRoutes);
 app.use('/api/appointments/guest', guestAppointmentsRoutes); // Public guest booking endpoint (separate router)
-app.use('/api/appointments', appointmentsRoutes); // Temporarily remove auth for testing
+app.use('/api/appointments', authMiddleware, rbac(['patient','doctor','admin']), appointmentsRoutes); // Restore auth for main endpoint
 app.use('/api/notifications', authMiddleware, rbac(['patient','donor','admin','lab','student','teacher','pharmacy','doctor']), notificationRoutes);
 // Teacher routes
 app.use('/api/teacher', authMiddleware, rbac(['teacher','admin']), teacherRoutes);

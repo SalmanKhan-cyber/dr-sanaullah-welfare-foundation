@@ -64,43 +64,25 @@ router.post('/', async (req, res) => {
 		const discountAmount = (consultationFee * discountRate) / 100;
 		const finalFee = consultationFee - discountAmount;
 		
-		// Create patient record for guest user
-		const { data: newPatient, error: patientCreateError } = await supabaseAdmin
-			.from('patients')
-			.insert({
-				user_id: '00000000-0000-0000-0000-000000000000', // Special UUID for guest users
-				name: patient_details.name || 'Guest Patient',
-				phone: patient_details.phone || 'Not Provided',
-				age: patient_details.age || 0,
-				gender: patient_details.gender || 'other',
-				cnic: patient_details.cnic || 'Not Provided',
-				history: patient_details.history || null
-			})
-			.select('id')
-			.single();
-		
-		if (patientCreateError) {
-			console.error('❌ Error creating patient record for guest:', patientCreateError);
-			return res.status(500).json({ error: 'Failed to create patient record' });
-		}
-		
-		const patientIdForAppointment = newPatient.id;
-		console.log('✅ Created patient record for guest:', newPatient.id);
-		
-		console.log('📅 Creating appointment for guest patient:', patientIdForAppointment);
-		
-		// Create appointment
+		// Create appointment record with guest patient details (no patient account creation)
 		const { data, error } = await supabaseAdmin
 			.from('appointments')
 			.insert({
-				patient_id: patientIdForAppointment,
+				patient_id: null, // No patient record for guests
 				doctor_id: doctor_id,
 				appointment_date: appointment_date,
 				appointment_time: appointment_time,
 				reason: reason || null,
-				status: 'scheduled',
 				consultation_fee: finalFee,
-				payment_status: 'pending'
+				payment_status: 'pending',
+				status: 'scheduled',
+				// Store guest patient details directly in appointment
+				guest_patient_name: patient_details.name,
+				guest_patient_phone: patient_details.phone,
+				guest_patient_age: patient_details.age,
+				guest_patient_gender: patient_details.gender,
+				guest_patient_cnic: patient_details.cnic,
+				guest_patient_history: patient_details.history || null
 			})
 			.select(`
 				id,
@@ -113,7 +95,12 @@ router.post('/', async (req, res) => {
 				consultation_fee,
 				payment_status,
 				created_at,
-				patients!inner(name, phone, age, gender),
+				guest_patient_name,
+				guest_patient_phone,
+				guest_patient_age,
+				guest_patient_gender,
+				guest_patient_cnic,
+				guest_patient_history,
 				doctors!inner(name, specialization)
 			`)
 			.single();
@@ -125,14 +112,14 @@ router.post('/', async (req, res) => {
 		
 		console.log('✅ Guest appointment created successfully:', data);
 		
-		// Generate appointment sheet
+		// Generate appointment sheet PDF
 		let appointmentSheetUrl = null;
 		let appointmentSheetFilename = null;
 		
 		try {
-			console.log('📄 Generating appointment sheet for guest appointment...');
+			console.log('📄 Generating appointment sheet PDF for guest...');
 			
-			// Prepare appointment data for PDF generation
+			// Prepare appointment data for PDF generation using guest details
 			const appointmentData = {
 				id: data.id,
 				appointment_date: data.appointment_date,
@@ -143,11 +130,12 @@ router.post('/', async (req, res) => {
 				payment_status: data.payment_status,
 				created_at: data.created_at,
 				patient: {
-					name: patient_details.name,
-					phone: patient_details.phone,
-					age: patient_details.age,
-					gender: patient_details.gender,
-					cnic: patient_details.cnic
+					name: data.guest_patient_name,
+					phone: data.guest_patient_phone,
+					age: data.guest_patient_age,
+					gender: data.guest_patient_gender,
+					cnic: data.guest_patient_cnic,
+					history: data.guest_patient_history
 				},
 				doctor: {
 					name: doctor.name,
@@ -165,6 +153,14 @@ router.post('/', async (req, res) => {
 			
 			appointmentSheetUrl = signedUrl;
 			appointmentSheetFilename = filename;
+			
+			// Update appointment with sheet URL
+			await supabaseAdmin
+				.from('appointments')
+				.update({ appointment_sheet_url: signedUrl })
+				.eq('id', data.id);
+			
+			console.log('✅ Appointment sheet generated and uploaded:', signedUrl);
 		} catch (pdfError) {
 			console.error('❌ Failed to generate appointment sheet:', pdfError);
 			// Don't fail the booking if PDF generation fails
