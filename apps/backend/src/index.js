@@ -30,6 +30,7 @@ import specialtiesRoutes from './routes/specialties.js';
 import conditionsRoutes from './routes/conditions.js';
 import appointmentsRoutes from './routes/appointments.js';
 import guestAppointmentsRoutes from './routes/guestAppointments.js';
+console.log('🔍 Guest appointments router imported:', guestAppointmentsRoutes);
 import surgeryCategoriesRoutes from './routes/surgeryCategories.js';
 import surgeryBookingsRoutes from './routes/surgeryBookings.js';
 import jobsRoutes from './routes/jobs.js';
@@ -967,6 +968,7 @@ app.use('/api/prescriptions', authMiddleware, rbac(['patient','admin','pharmacy'
 app.use('/api/certificates', authMiddleware, rbac(['student','teacher','admin']), certificateRoutes);
 app.use('/api/doctors/public', doctorRoutes); // Public doctors endpoint (must be before authenticated routes)
 app.use('/api/doctors', authMiddleware, rbac(['patient','admin','doctor']), doctorRoutes);
+console.log('🔍 Mounting guest appointments router at /api/appointments/guest');
 app.use('/api/appointments/guest', guestAppointmentsRoutes); // Public guest booking endpoint (separate router)
 app.use('/api/appointments', authMiddleware, rbac(['patient','doctor','admin']), appointmentsRoutes); // Restore auth for main endpoint
 app.use('/api/notifications', authMiddleware, rbac(['patient','donor','admin','lab','student','teacher','pharmacy','doctor']), notificationRoutes);

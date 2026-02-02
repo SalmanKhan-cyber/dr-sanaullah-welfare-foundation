@@ -6,9 +6,20 @@ const router = express.Router();
 
 // Health check for guest routes
 router.get('/health', (req, res) => {
+	console.log('🔍 Guest appointments health check accessed');
 	res.json({ 
 		status: 'OK', 
 		message: 'Guest appointments router is working',
+		timestamp: new Date().toISOString()
+	});
+});
+
+// Test endpoint to verify routing
+router.get('/test', (req, res) => {
+	console.log('🔍 Guest appointments test endpoint accessed');
+	res.json({ 
+		status: 'OK', 
+		message: 'Guest appointments test endpoint is working',
 		timestamp: new Date().toISOString()
 	});
 });
