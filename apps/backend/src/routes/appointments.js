@@ -530,60 +530,18 @@ router.post('/', async (req, res) => {
 			console.error('❌ Error generating patient file:', fileError);
 			// Don't fail the appointment booking if file generation fails
 		}
-
-		// Generate appointment sheet for immediate download
-		try {
-			console.log('📋 Generating appointment sheet for immediate download:', data.id);
-			
-			// Get complete patient data
-			const { data: completePatient } = await supabaseAdmin
-				.from('patients')
-				.select('*')
-				.eq('user_id', userId)
-				.single();
-			
-			// Get complete doctor data
-			const { data: completeDoctor } = await supabaseAdmin
-				.from('doctors')
-				.select('*')
-				.eq('id', doctor_id)
-				.single();
-			
-			// Prepare appointment data for sheet generation
-			const sheetData = {
-				patient: {
-					...completePatient,
-					email: patient.email
-				},
-				doctor: completeDoctor || { name: data.doctors?.name },
-				appointment: {
-					...data,
-					date: appointment_date,
-					time: appointment_time
-				},
-				appointmentId: data.id
-			};
-			
-			// Generate appointment sheet PDF
-			const sheetPdfBuffer = await generateAppointmentSheetPDF(sheetData);
-			
-			// Generate filename
-			const sheetFileName = generateAppointmentSheetFileName(sheetData.patient, sheetData.appointmentId);
-			
-			// Upload appointment sheet to storage
-			const sheetFileUrl = await uploadFile('appointment-sheets', sheetPdfBuffer, sheetFileName, 'application/pdf');
 			
 			// Update appointment with sheet URL
 			await supabaseAdmin
 				.from('appointments')
-				.update({ appointment_sheet_url: sheetFileUrl })
+				.update({ appointment_sheet_url: signedUrl })
 				.eq('id', data.id);
 			
-			console.log('✅ Appointment sheet generated and uploaded:', sheetFileUrl);
+			console.log('✅ Appointment sheet generated and uploaded:', signedUrl);
 			
 			// Include appointment sheet URL in response for immediate download
-			data.appointment_sheet_url = sheetFileUrl;
-			data.appointment_sheet_filename = sheetFileName;
+			data.appointment_sheet_url = signedUrl;
+			data.appointment_sheet_filename = filename;
 		} catch (sheetError) {
 			console.error('❌ Error generating appointment sheet:', sheetError);
 			// Don't fail the appointment booking if sheet generation fails
