@@ -35,12 +35,8 @@ import jobsRoutes from './routes/jobs.js';
 import homeServicesRoutes from './routes/homeServices.js';
 
 const app = express();
-// Railway will inject PORT automatically, just ensure it's a number
-const PORT = Number(process.env.PORT) || 4000;
-
-console.log('🔍 PORT configuration:');
-console.log('  - process.env.PORT:', process.env.PORT);
-console.log('  - Final PORT:', PORT);
+// Railway handles PORT automatically - no custom handling needed
+const PORT = process.env.PORT || 4000;
 
 // Trust proxy for Cloudflare and other reverse proxies
 app.set("trust proxy", true);
