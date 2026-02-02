@@ -1,6 +1,6 @@
 import express from 'express';
 import { supabaseAdmin } from '../lib/supabase.js';
-import { generateAppointmentSheet } from '../lib/appointmentSheetGenerator.js';
+import { generateAppointmentSheetPDF, generateAppointmentSheetFileName } from '../lib/appointmentSheetGenerator.js';
 
 const router = express.Router();
 
@@ -133,14 +133,6 @@ router.post('/', async (req, res) => {
 			
 			// Prepare appointment data for PDF generation using guest details
 			const appointmentData = {
-				id: data.id,
-				appointment_date: data.appointment_date,
-				appointment_time: data.appointment_time,
-				reason: data.reason,
-				status: data.status,
-				consultation_fee: data.consultation_fee,
-				payment_status: data.payment_status,
-				created_at: data.created_at,
 				patient: {
 					name: data.guest_patient_name,
 					phone: data.guest_patient_phone,
@@ -152,14 +144,42 @@ router.post('/', async (req, res) => {
 				doctor: {
 					name: doctor.name,
 					specialization: doctor.specialization
-				}
+				},
+				appointment: {
+					date: data.appointment_date,
+					time: data.appointment_time,
+					reason: data.reason,
+					status: data.status,
+					consultation_fee: data.consultation_fee
+				},
+				appointmentId: data.id
 			};
 			
 			console.log('🔍 Appointment data for PDF:', appointmentData);
 			
-			// Generate PDF
-			const { filename, filePath } = await generateAppointmentSheet(appointmentData);
-			console.log('🔍 PDF generated:', { filename, filePath });
+			// Generate PDF buffer
+			const pdfBuffer = await generateAppointmentSheetPDF(appointmentData);
+			console.log('🔍 PDF buffer generated, size:', pdfBuffer.length);
+			
+			// Generate filename
+			const filename = generateAppointmentSheetFileName(appointmentData.patient, data.id);
+			const filePath = `appointment-sheets/${filename}`;
+			console.log('🔍 Generated filename:', filename);
+			
+			// Upload to Supabase storage
+			const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+				.from('appointment-sheets')
+				.upload(filePath, pdfBuffer, {
+					contentType: 'application/pdf',
+					upsert: true
+				});
+			
+			if (uploadError) {
+				console.error('❌ Failed to upload appointment sheet:', uploadError);
+				throw uploadError;
+			}
+			
+			console.log('✅ PDF uploaded successfully:', uploadData);
 			
 			// Generate signed URL for immediate download
 			const { signedUrl } = await supabaseAdmin.storage
