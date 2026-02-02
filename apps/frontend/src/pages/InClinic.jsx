@@ -137,10 +137,20 @@ export default function InClinic() {
 			return;
 		}
 
-		if (!hasPatientProfile) {
+		// Only check for patient profile if user is authenticated
+		// Guest users can book without existing profiles
+		if (isAuthenticated && !hasPatientProfile) {
 			setShowProfileForm(true);
 			alert('Please complete your patient profile first. Fill in all required fields (Name, Phone, Age, Gender, CNIC).');
 			return;
+		}
+
+		// For guest users, validate patient details form
+		if (!isAuthenticated) {
+			if (!patientProfileForm.name || !patientProfileForm.phone || !patientProfileForm.age || !patientProfileForm.gender || !patientProfileForm.cnic) {
+				alert('Please fill in all patient details (Name, Phone, Age, Gender, CNIC).');
+				return;
+			}
 		}
 
 		setBookingLoading(true);
@@ -189,7 +199,8 @@ export default function InClinic() {
 			console.error('Booking error:', err);
 			const errorMsg = err.message || 'Failed to book appointment';
 			
-			if (errorMsg.includes('Patient profile not found') || errorMsg.includes('incomplete')) {
+			// Only show profile form for authenticated users with profile issues
+			if (isAuthenticated && (errorMsg.includes('Patient profile not found') || errorMsg.includes('incomplete'))) {
 				setHasPatientProfile(false);
 				setShowProfileForm(true);
 				alert(errorMsg + '\n\nPlease complete your profile and try again.');

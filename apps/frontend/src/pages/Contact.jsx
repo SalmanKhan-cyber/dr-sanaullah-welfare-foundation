@@ -168,7 +168,8 @@ export default function Contact() {
 			setAppointmentForm({ appointment_date: '', appointment_time: '', reason: '' });
 			setShowProfileForm(false);
 		} catch (err) {
-			if (err.message?.includes('Patient profile not found')) {
+			// Only show profile form for authenticated users with profile issues
+			if (isAuthenticated && err.message?.includes('Patient profile not found')) {
 				setHasPatientProfile(false);
 				setShowProfileForm(true);
 				setBookingLoading(false);

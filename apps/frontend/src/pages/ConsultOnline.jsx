@@ -221,7 +221,8 @@ export default function ConsultOnline() {
 			console.error('Booking error:', err);
 			const errorMsg = err.message || 'Failed to book consultation';
 			
-			if (errorMsg.includes('Patient profile not found') || errorMsg.includes('incomplete')) {
+			// Only show profile form for authenticated users with profile issues
+			if (isAuthenticated && (errorMsg.includes('Patient profile not found') || errorMsg.includes('incomplete'))) {
 				setHasPatientProfile(false);
 				setShowProfileForm(true);
 				alert(errorMsg + '\n\nPlease complete your profile and try again.');
