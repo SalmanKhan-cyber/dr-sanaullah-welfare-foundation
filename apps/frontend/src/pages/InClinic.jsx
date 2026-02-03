@@ -222,6 +222,7 @@ export default function InClinic() {
 			}
 			setBookingLoading(false);
 		}
+		// Force rebuild - fix appointmentError issue
 	}
 
 	return (
