@@ -63,19 +63,19 @@ guestRouter.post('/', async (req, res) => {
 		console.log('👤 Processing guest booking with patient details:', patient_details);
 		
 		// Get doctor details for fee calculation
-		const { data: doctor } = await supabaseAdmin
+		const { data: doctorData, error: doctorError } = await supabaseAdmin
 			.from('doctors')
 			.select('consultation_fee, discount_rate, name, specialization')
 			.eq('id', doctor_id)
 			.single();
 		
-		if (!doctor) {
+		if (doctorError) {
 			return res.status(404).json({ error: 'Doctor not found' });
 		}
 		
 		// Calculate final fee with discount
-		const consultationFee = parseFloat(doctor.consultation_fee) || 0;
-		const discountRate = parseFloat(doctor.discount_rate) || 0;
+		const consultationFee = parseFloat(doctorData.consultation_fee) || 0;
+		const discountRate = parseFloat(doctorData.discount_rate) || 0;
 		const discountAmount = (consultationFee * discountRate) / 100;
 		const finalFee = consultationFee - discountAmount;
 		
@@ -97,7 +97,7 @@ guestRouter.post('/', async (req, res) => {
 			guest_patient_history: patient_details.history || null
 		});
 		
-		const { data, error } = await supabaseAdmin
+		const { data: appointmentData, error } = await supabaseAdmin
 			.from('appointments')
 			.insert({
 				patient_id: null, // No patient record for guests
