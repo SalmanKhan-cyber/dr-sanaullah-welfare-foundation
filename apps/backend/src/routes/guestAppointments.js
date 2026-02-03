@@ -136,11 +136,11 @@ guestRouter.post('/', async (req, res) => {
 			`)
 			.single();
 		
-		if (appointmentError) {
-			console.error('❌ Error creating appointment:', appointmentError);
-			console.error('❌ Error details:', appointmentError.details);
-			console.error('❌ Error hint:', appointmentError.hint);
-			return res.status(500).json({ error: 'Failed to create appointment: ' + appointmentError.message });
+		if (error) {
+			console.error('❌ Error creating appointment:', error);
+			console.error('❌ Error details:', error.details);
+			console.error('❌ Error hint:', error.hint);
+			return res.status(500).json({ error: 'Failed to create appointment: ' + error.message });
 		}
 		
 		console.log('✅ Guest appointment created successfully:', appointmentData);
