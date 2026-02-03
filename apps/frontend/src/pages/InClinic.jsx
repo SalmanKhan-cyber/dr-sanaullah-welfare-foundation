@@ -222,7 +222,7 @@ export default function InClinic() {
 			}
 			setBookingLoading(false);
 		}
-		// Force rebuild - fix appointmentError issue
+		// Force rebuild v2 - fix appointmentError issue - cache bust
 	}
 
 	return (
