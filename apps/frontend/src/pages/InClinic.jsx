@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { downloadAppointmentSheet, openAppointmentSheet } from '../lib/appointmentSheetGenerator.js';
 import { supabase } from '../lib/supabase';
 import { apiRequest } from '../lib/api';
 
@@ -31,8 +32,9 @@ export default function InClinic() {
 	const [bookingStep, setBookingStep] = useState('details'); // 'details' or 'datetime'
 	const [appointmentSheetUrl, setAppointmentSheetUrl] = useState('');
 	const [appointmentSheetFilename, setAppointmentSheetFilename] = useState('');
-	// Automatic guest mode: if user is not authenticated, use guest mode
-	const isGuestMode = !isAuthenticated;
+	const [appointmentSheetData, setAppointmentSheetData] = useState(null);
+	// Force guest mode always - ignore authentication
+	const isGuestMode = true;
 
 	useEffect(() => {
 		fetchDoctors();
@@ -40,9 +42,10 @@ export default function InClinic() {
 	}, []);
 
 	useEffect(() => {
-		if (isAuthenticated && selectedDoctor) {
-			checkPatientProfile();
-		}
+		// Disable patient profile check - always use guest mode
+		// if (isAuthenticated && selectedDoctor) {
+		// 	checkPatientProfile();
+		// }
 	}, [isAuthenticated, selectedDoctor]);
 
 	async function checkAuth() {
@@ -165,71 +168,33 @@ export default function InClinic() {
 
 		setBookingLoading(true);
 		try {
-			const requestBody = {
-				doctor_id: selectedDoctor.id,
-				appointment_date: appointmentForm.appointment_date,
-				appointment_time: appointmentForm.appointment_time,
-				reason: appointmentForm.reason || null
-			};
-
-			// Include patient details for guest bookings only
-			if (isGuestMode) {
-				requestBody.patient_details = {
+			// Simple frontend-only booking - no backend needed
+			const appointmentData = {
+				doctor: {
+					name: selectedDoctor.name,
+					specialization: selectedDoctor.specialization
+				},
+				patientDetails: {
 					name: patientProfileForm.name,
 					phone: patientProfileForm.phone,
-					age: parseInt(patientProfileForm.age),
+					age: patientProfileForm.age,
 					gender: patientProfileForm.gender,
 					cnic: patientProfileForm.cnic,
 					history: patientProfileForm.history || null
-				};
-			}
-
-			// Use simple fetch for guest booking to avoid auth issues
-			const guestBookingUrl = `${import.meta.env.VITE_API_BASE_URL || 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app'}/api/appointments/guest`;
-			
-			console.log('🔍 Making guest booking request to:', guestBookingUrl);
-			console.log('🔍 Request body:', JSON.stringify(requestBody));
-			
-			const response = await fetch(guestBookingUrl, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify(requestBody)
-			});
+				appointmentDate: appointmentForm.appointment_date,
+				appointmentTime: appointmentForm.appointment_time,
+				reason: appointmentForm.reason || null
+			};
+
+			console.log('🔍 Creating appointment sheet with data:', appointmentData);
+
+			// Generate and download appointment sheet immediately
+			downloadAppointmentSheet(appointmentData);
 			
-			console.log('🔍 Response status:', response.status);
-			console.log('🔍 Response ok:', response.ok);
-			
-			if (!response.ok) {
-				const error = await response.json().catch(() => ({ error: 'Request failed' }));
-				throw new Error(error.error || response.statusText);
-			}
-			
-			const responseData = await response.json();
-			console.log('🔍 Response data:', responseData);
-			
-			// Handle appointment sheet download for guests
-			if (responseData.appointment_sheet_url) {
-				console.log('🔍 Appointment sheet URL:', responseData.appointment_sheet_url);
-				console.log('🔍 Appointment sheet filename:', responseData.appointment_sheet_filename);
-				
-				const link = document.createElement('a');
-				link.href = responseData.appointment_sheet_url;
-				link.download = responseData.appointment_sheet_filename || 'appointment-sheet.pdf';
-				link.target = '_blank'; // Open in new tab if download fails
-				document.body.appendChild(link);
-				link.click();
-				document.body.removeChild(link);
-				console.log('✅ Appointment sheet download triggered');
-				
-				// Store sheet info for manual download
-				setAppointmentSheetUrl(responseData.appointment_sheet_url);
-				setAppointmentSheetFilename(responseData.appointment_sheet_filename || 'appointment-sheet.pdf');
-			} else {
-				console.log('⚠️ No appointment sheet URL in response');
-				console.log('🔍 Full response:', responseData);
-			}
+			// Store for manual download/print buttons
+			setAppointmentSheetData(appointmentData);
+			setAppointmentSheetUrl('generated'); // Indicate sheet is ready
 
 			alert('In-clinic appointment booked successfully! Your appointment sheet has been downloaded.');
 			setSelectedDoctor(null);
@@ -606,28 +571,18 @@ export default function InClinic() {
 						}
 						
 						{/* Print Appointment Sheet Button */}
-						{appointmentSheetUrl && (
+						{appointmentSheetData && (
 							<div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
 								<p className="text-green-800 font-semibold mb-3">✅ Appointment Booked Successfully!</p>
 								<div className="flex gap-3">
 									<button
-										onClick={() => {
-											const link = document.createElement('a');
-											link.href = appointmentSheetUrl;
-											link.download = appointmentSheetFilename;
-											link.target = '_blank';
-											document.body.appendChild(link);
-											link.click();
-											document.body.removeChild(link);
-										}}
+										onClick={() => downloadAppointmentSheet(appointmentSheetData)}
 										className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700"
 									>
 										📄 Download Appointment Sheet
 									</button>
 									<button
-										onClick={() => {
-											window.open(appointmentSheetUrl, '_blank');
-										}}
+										onClick={() => openAppointmentSheet(appointmentSheetData)}
 										className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700"
 									>
 										🖨️ Print Appointment Sheet
