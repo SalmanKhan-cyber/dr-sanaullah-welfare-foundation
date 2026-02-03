@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { downloadAppointmentSheet, openAppointmentSheet } from '../lib/appointmentSheetGenerator.js';
+import { downloadAppointmentCard, openAppointmentCard } from '../lib/appointmentCardGenerator.js';
 import { supabase } from '../lib/supabase';
 import { apiRequest } from '../lib/api';
 
@@ -568,19 +569,43 @@ export default function InClinic() {
 						{appointmentSheetData && (
 							<div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
 								<p className="text-green-800 font-semibold mb-3">✅ Appointment Booked Successfully!</p>
-								<div className="flex gap-3">
-									<button
-										onClick={() => downloadAppointmentSheet(appointmentSheetData)}
-										className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700"
-									>
-										📄 Download Appointment Sheet
-									</button>
-									<button
-										onClick={() => openAppointmentSheet(appointmentSheetData)}
-										className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700"
-									>
-										🖨️ Print Appointment Sheet
-									</button>
+								
+								{/* Appointment Sheet Options */}
+								<div className="mb-4">
+									<h4 className="text-sm font-semibold text-gray-700 mb-2">📄 Appointment Sheet (Doctor's Notes)</h4>
+									<div className="flex gap-3">
+										<button
+											onClick={() => downloadAppointmentSheet(appointmentSheetData)}
+											className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 text-sm"
+										>
+											� Download Sheet
+										</button>
+										<button
+											onClick={() => openAppointmentSheet(appointmentSheetData)}
+											className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 text-sm"
+										>
+											🖨️ Print Sheet
+										</button>
+									</div>
+								</div>
+								
+								{/* Appointment Card Options */}
+								<div>
+									<h4 className="text-sm font-semibold text-gray-700 mb-2">🏥 Appointment Card (Patient Copy)</h4>
+									<div className="flex gap-3">
+										<button
+											onClick={() => downloadAppointmentCard(appointmentSheetData)}
+											className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 text-sm"
+										>
+											� Download Card
+										</button>
+										<button
+											onClick={() => openAppointmentCard(appointmentSheetData)}
+											className="flex-1 bg-teal-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-teal-700 text-sm"
+										>
+											🖨️ Print Card
+										</button>
+									</div>
 								</div>
 							</div>
 						)}
