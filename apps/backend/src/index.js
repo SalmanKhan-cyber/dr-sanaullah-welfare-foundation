@@ -47,7 +47,9 @@ app.set("trust proxy", true);
 const corsOptions = {
   origin: [
     "https://drsanaullahwelfarefoundation.com",
-    "https://www.drsanaullahwelfarefoundation.com"
+    "https://www.drsanaullahwelfarefoundation.com",
+    "https://dswff.pages.dev",
+    "https://app.drsanaullahwelfarefoundation.com"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
