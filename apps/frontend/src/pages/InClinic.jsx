@@ -179,9 +179,11 @@ export default function InClinic() {
 				body: JSON.stringify(requestBody)
 			});
 			
-			// Handle appointment sheet download if available
+			// Handle appointment sheet download for guests
 			if (response.appointment_sheet_url) {
-				console.log('🔍 Downloading appointment sheet:', response.appointment_sheet_url);
+				console.log('🔍 Appointment sheet URL:', response.appointment_sheet_url);
+				console.log('🔍 Appointment sheet filename:', response.appointment_sheet_filename);
+				
 				const link = document.createElement('a');
 				link.href = response.appointment_sheet_url;
 				link.download = response.appointment_sheet_filename || 'appointment-sheet.pdf';
@@ -192,6 +194,7 @@ export default function InClinic() {
 				console.log('✅ Appointment sheet download triggered');
 			} else {
 				console.log('⚠️ No appointment sheet URL in response');
+				console.log('🔍 Full response:', response);
 			}
 
 			alert('In-clinic appointment booked successfully! Your appointment sheet has been downloaded.');
