@@ -176,19 +176,39 @@ export default function InClinic() {
 				};
 			}
 
-			const response = await apiRequest('/api/appointments/guest', {
+			// Use simple fetch for guest booking to avoid auth issues
+			const guestBookingUrl = `${import.meta.env.VITE_API_BASE_URL || 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app'}/api/appointments/guest`;
+			
+			console.log('🔍 Making guest booking request to:', guestBookingUrl);
+			console.log('🔍 Request body:', JSON.stringify(requestBody));
+			
+			const response = await fetch(guestBookingUrl, {
 				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
 				body: JSON.stringify(requestBody)
 			});
 			
+			console.log('🔍 Response status:', response.status);
+			console.log('🔍 Response ok:', response.ok);
+			
+			if (!response.ok) {
+				const error = await response.json().catch(() => ({ error: 'Request failed' }));
+				throw new Error(error.error || response.statusText);
+			}
+			
+			const responseData = await response.json();
+			console.log('🔍 Response data:', responseData);
+			
 			// Handle appointment sheet download for guests
-			if (response.appointment_sheet_url) {
-				console.log('🔍 Appointment sheet URL:', response.appointment_sheet_url);
-				console.log('🔍 Appointment sheet filename:', response.appointment_sheet_filename);
+			if (responseData.appointment_sheet_url) {
+				console.log('🔍 Appointment sheet URL:', responseData.appointment_sheet_url);
+				console.log('🔍 Appointment sheet filename:', responseData.appointment_sheet_filename);
 				
 				const link = document.createElement('a');
-				link.href = response.appointment_sheet_url;
-				link.download = response.appointment_sheet_filename || 'appointment-sheet.pdf';
+				link.href = responseData.appointment_sheet_url;
+				link.download = responseData.appointment_sheet_filename || 'appointment-sheet.pdf';
 				link.target = '_blank'; // Open in new tab if download fails
 				document.body.appendChild(link);
 				link.click();
@@ -196,11 +216,11 @@ export default function InClinic() {
 				console.log('✅ Appointment sheet download triggered');
 				
 				// Store sheet info for manual download
-				setAppointmentSheetUrl(response.appointment_sheet_url);
-				setAppointmentSheetFilename(response.appointment_sheet_filename || 'appointment-sheet.pdf');
+				setAppointmentSheetUrl(responseData.appointment_sheet_url);
+				setAppointmentSheetFilename(responseData.appointment_sheet_filename || 'appointment-sheet.pdf');
 			} else {
 				console.log('⚠️ No appointment sheet URL in response');
-				console.log('🔍 Full response:', response);
+				console.log('🔍 Full response:', responseData);
 			}
 
 			alert('In-clinic appointment booked successfully! Your appointment sheet has been downloaded.');

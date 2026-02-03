@@ -4,7 +4,7 @@ import { supabase } from './supabase';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
   (import.meta.env.MODE === 'development' 
     ? 'http://localhost:4000' 
-    : 'https://api.drsanaullahwelfarefoundation.com');
+    : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app');
 
 // Debug log to verify API URL
 console.log('🔍 API URL being used:', API_BASE_URL);
