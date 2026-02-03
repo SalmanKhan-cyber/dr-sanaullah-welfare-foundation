@@ -39,10 +39,10 @@ export default function InClinic() {
 	}, []);
 
 	useEffect(() => {
-		if (isAuthenticated && selectedDoctor) {
+		if (isAuthenticated && selectedDoctor && !isGuestMode) {
 			checkPatientProfile();
 		}
-	}, [isAuthenticated, selectedDoctor]);
+	}, [isAuthenticated, selectedDoctor, isGuestMode]);
 
 	async function checkAuth() {
 		const { data: { session } } = await supabase.auth.getSession();
@@ -135,6 +135,11 @@ export default function InClinic() {
 		if (e) e.preventDefault();
 		if (!selectedDoctor) return;
 
+		console.log('🔍 handleBookingSubmit called');
+		console.log('🔍 isAuthenticated:', isAuthenticated);
+		console.log('🔍 isGuestMode:', isGuestMode);
+		console.log('🔍 selectedDoctor:', selectedDoctor);
+
 		if (!appointmentForm.appointment_date || !appointmentForm.appointment_time) {
 			alert('Please fill in appointment date and time');
 			return;
@@ -143,6 +148,7 @@ export default function InClinic() {
 		// Only check for patient profile if user is authenticated AND not in guest mode
 		// Guest users can book without existing profiles
 		if (isAuthenticated && !hasPatientProfile && !isGuestMode) {
+			console.log('🔍 Showing profile form - authenticated user without profile');
 			setShowProfileForm(true);
 			alert('Please complete your patient profile first. Fill in all required fields (Name, Phone, Age, Gender, CNIC).');
 			return;
@@ -150,6 +156,7 @@ export default function InClinic() {
 
 		// For guest users or guest mode, validate patient details form
 		if (!isAuthenticated || isGuestMode) {
+			console.log('🔍 Validating guest form - guest mode or not authenticated');
 			if (!patientProfileForm.name || !patientProfileForm.phone || !patientProfileForm.age || !patientProfileForm.gender || !patientProfileForm.cnic) {
 				alert('Please fill in all patient details (Name, Phone, Age, Gender, CNIC).');
 				return;
@@ -302,7 +309,10 @@ export default function InClinic() {
 								</p>
 							</div>
 							<button
-								onClick={() => setIsGuestMode(!isGuestMode)}
+								onClick={() => {
+									console.log('🔍 Toggling guest mode from', isGuestMode, 'to', !isGuestMode);
+									setIsGuestMode(!isGuestMode);
+								}}
 								className={`px-6 py-3 rounded-lg font-semibold transition-all ${
 									isGuestMode 
 										? 'bg-green-600 text-white hover:bg-green-700' 
