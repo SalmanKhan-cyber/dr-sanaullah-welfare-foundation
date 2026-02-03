@@ -31,6 +31,7 @@ export default function InClinic() {
 	const [bookingStep, setBookingStep] = useState('details'); // 'details' or 'datetime'
 	const [appointmentSheetUrl, setAppointmentSheetUrl] = useState('');
 	const [appointmentSheetFilename, setAppointmentSheetFilename] = useState('');
+	const [isGuestMode, setIsGuestMode] = useState(false); // Force guest mode toggle
 
 	useEffect(() => {
 		fetchDoctors();
@@ -139,16 +140,16 @@ export default function InClinic() {
 			return;
 		}
 
-		// Only check for patient profile if user is authenticated
+		// Only check for patient profile if user is authenticated AND not in guest mode
 		// Guest users can book without existing profiles
-		if (isAuthenticated && !hasPatientProfile) {
+		if (isAuthenticated && !hasPatientProfile && !isGuestMode) {
 			setShowProfileForm(true);
 			alert('Please complete your patient profile first. Fill in all required fields (Name, Phone, Age, Gender, CNIC).');
 			return;
 		}
 
-		// For guest users, validate patient details form
-		if (!isAuthenticated) {
+		// For guest users or guest mode, validate patient details form
+		if (!isAuthenticated || isGuestMode) {
 			if (!patientProfileForm.name || !patientProfileForm.phone || !patientProfileForm.age || !patientProfileForm.gender || !patientProfileForm.cnic) {
 				alert('Please fill in all patient details (Name, Phone, Age, Gender, CNIC).');
 				return;
@@ -164,8 +165,8 @@ export default function InClinic() {
 				reason: appointmentForm.reason || null
 			};
 
-			// Include patient details for guest bookings
-			if (!isAuthenticated) {
+			// Include patient details for guest bookings or guest mode
+			if (!isAuthenticated || isGuestMode) {
 				requestBody.patient_details = {
 					name: patientProfileForm.name,
 					phone: patientProfileForm.phone,
@@ -229,9 +230,9 @@ export default function InClinic() {
 			setShowProfileForm(false);
 			setBookingStep('details');
 			
-			// For guest users, DON'T navigate to dashboard - just reset and stay on page
-			if (!isAuthenticated) {
-				console.log('👤 Guest user - staying on booking page');
+			// For guest users or guest mode, DON'T navigate to dashboard - just reset and stay on page
+			if (!isAuthenticated || isGuestMode) {
+				console.log('👤 Guest user or guest mode - staying on booking page');
 				// Don't navigate anywhere for guest users
 			} else {
 				console.log('🔐 Authenticated user - navigating to dashboard');
@@ -283,6 +284,42 @@ export default function InClinic() {
 								</button>
 							</div>
 						</div>
+					</div>
+				</div>
+			</section>
+
+			{/* Guest Mode Toggle */}
+			<section className="py-8 bg-gray-50">
+				<div className="max-w-7xl mx-auto px-4">
+					<div className="bg-white rounded-2xl shadow-lg p-6">
+						<div className="flex items-center justify-between">
+							<div>
+								<h3 className="text-lg font-bold text-gray-900">Booking Mode</h3>
+								<p className="text-gray-600 text-sm mt-1">
+									{isGuestMode 
+										? "👤 Guest Mode: Book without creating an account" 
+										: "🔐 Account Mode: Use your patient account"}
+								</p>
+							</div>
+							<button
+								onClick={() => setIsGuestMode(!isGuestMode)}
+								className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+									isGuestMode 
+										? 'bg-green-600 text-white hover:bg-green-700' 
+										: 'bg-blue-600 text-white hover:bg-blue-700'
+								}`}
+							>
+								{isGuestMode ? '👤 Guest Mode' : '🔐 Account Mode'}
+							</button>
+						</div>
+						{isGuestMode && (
+							<div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+								<p className="text-green-800 text-sm">
+									✅ Guest booking enabled! Your appointment will be created without requiring an account.
+									You'll receive an appointment sheet with all the details.
+								</p>
+							</div>
+						)}
 					</div>
 				</div>
 			</section>
