@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { downloadAppointmentSheet, openAppointmentSheet } from '../lib/appointmentSheetGenerator.js';
+import { downloadNewAppointment, openNewAppointment } from '../lib/newAppointmentGenerator.js';
 import { downloadAppointmentCard, openAppointmentCard } from '../lib/appointmentCardGenerator.js';
 import { downloadAppointmentSlip, openAppointmentSlip } from '../lib/appointmentSlipGenerator.js';
 import { supabase } from '../lib/supabase';
 import { apiRequest } from '../lib/api';
 
-// FINAL FORCE REBUILD v4.0 - NEW BLUE HEADER DESIGN - CACHE BUST - MUST LOAD NEW DESIGN
+// 🔥🔥🔥 TOTALLY NEW FILE - BYPASS ALL CACHE - NEW DESIGN WITH RED/CORAL COLORS
 
 export default function InClinic() {
 	const navigate = useNavigate();
@@ -192,10 +192,10 @@ export default function InClinic() {
 				reason: appointmentForm.reason || null
 			};
 
-			console.log('🔍 Creating appointment sheet with data:', appointmentData);
+			console.log('🔍 Creating NEW appointment sheet with data:', appointmentData);
 
-			// Generate and download appointment sheet immediately
-			downloadAppointmentSheet(appointmentData);
+			// Generate and download NEW appointment sheet immediately
+			downloadNewAppointment(appointmentData);
 			
 			// Store for manual download/print buttons
 			setAppointmentSheetData(appointmentData);
@@ -571,21 +571,21 @@ export default function InClinic() {
 							<div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
 								<p className="text-green-800 font-semibold mb-3">✅ Appointment Booked Successfully!</p>
 								
-								{/* Appointment Sheet Options */}
+								{/* NEW Appointment Sheet */}
 								<div className="mb-4">
-									<h4 className="text-sm font-semibold text-gray-700 mb-2">📄 Appointment Sheet (Doctor's Notes)</h4>
+									<h4 className="text-sm font-semibold text-gray-700 mb-2">� NEW Appointment Sheet (Red/Coral Design)</h4>
 									<div className="flex gap-3">
 										<button
-											onClick={() => downloadAppointmentSheet(appointmentSheetData)}
-											className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 text-sm"
+											onClick={() => downloadNewAppointment(appointmentSheetData)}
+											className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 text-sm"
 										>
-											📥 Download Sheet
+											📥 Download NEW Sheet
 										</button>
 										<button
-											onClick={() => openAppointmentSheet(appointmentSheetData)}
-											className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 text-sm"
+											onClick={() => openNewAppointment(appointmentSheetData)}
+											className="flex-1 bg-coral-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-coral-700 text-sm"
 										>
-											🖨️ Print Sheet
+											🖨️ Print NEW Sheet
 										</button>
 									</div>
 								</div>
