@@ -38,19 +38,22 @@ export default function InClinic() {
 
 	useEffect(() => {
 		fetchDoctors();
-		checkAuth();
+		// Skip auth check completely - always use guest mode
+		// checkAuth();
 	}, []);
 
 	useEffect(() => {
-		// Disable patient profile check - always use guest mode
+		// Completely disable patient profile check
 		// if (isAuthenticated && selectedDoctor) {
 		// 	checkPatientProfile();
 		// }
-	}, [isAuthenticated, selectedDoctor]);
+	}, []);
 
 	async function checkAuth() {
-		const { data: { session } } = await supabase.auth.getSession();
-		setIsAuthenticated(!!session);
+		// Disable auth checking
+		// const { data: { session } } = await supabase.auth.getSession();
+		// setIsAuthenticated(!!session);
+		setIsAuthenticated(false); // Always false to force guest mode
 	}
 
 	async function checkPatientProfile() {
@@ -149,21 +152,19 @@ export default function InClinic() {
 			return;
 		}
 
-		// Only check for patient profile if user is authenticated (not guest)
-		if (isAuthenticated && !hasPatientProfile) {
-			console.log('🔍 Showing profile form - authenticated user without profile');
-			setShowProfileForm(true);
-			alert('Please complete your patient profile first. Fill in all required fields (Name, Phone, Age, Gender, CNIC).');
-			return;
-		}
+		// Skip all profile checks - always use guest mode
+		// if (isAuthenticated && !hasPatientProfile) {
+		// 	console.log('🔍 Showing profile form - authenticated user without profile');
+		// 	setShowProfileForm(true);
+		// 	alert('Please complete your patient profile first. Fill in all required fields (Name, Phone, Age, Gender, CNIC).');
+		// 	return;
+		// }
 
-		// For guest users, validate patient details form
-		if (isGuestMode) {
-			console.log('🔍 Validating guest form - automatic guest mode');
-			if (!patientProfileForm.name || !patientProfileForm.phone || !patientProfileForm.age || !patientProfileForm.gender || !patientProfileForm.cnic) {
-				alert('Please fill in all patient details (Name, Phone, Age, Gender, CNIC).');
-				return;
-			}
+		// Always validate guest form since we're always in guest mode
+		console.log('🔍 Validating guest form - always guest mode');
+		if (!patientProfileForm.name || !patientProfileForm.phone || !patientProfileForm.age || !patientProfileForm.gender || !patientProfileForm.cnic) {
+			alert('Please fill in all patient details (Name, Phone, Age, Gender, CNIC).');
+			return;
 		}
 
 		setBookingLoading(true);
@@ -202,26 +203,17 @@ export default function InClinic() {
 			setShowProfileForm(false);
 			setBookingStep('details');
 			
-			// For guest users, DON'T navigate to dashboard - just reset and stay on page
-			if (isGuestMode) {
-				console.log('👤 Guest user - staying on booking page');
-				// Don't navigate anywhere for guest users
-			} else {
-				console.log('🔐 Authenticated user - navigating to dashboard');
-				navigate('/dashboard/patient');
-			}
+			// NEVER navigate anywhere - always stay on booking page
+			console.log('👤 Staying on booking page - no navigation');
+			
+			// Keep the appointment sheet buttons visible for download/print
 		} catch (err) {
 			console.error('Booking error:', err);
 			const errorMsg = err.message || 'Failed to book appointment';
 			
-			// Only show profile form for authenticated users with profile issues
-			if (isAuthenticated && (errorMsg.includes('Patient profile not found') || errorMsg.includes('incomplete'))) {
-				setHasPatientProfile(false);
-				setShowProfileForm(true);
-				alert(errorMsg + '\n\nPlease complete your profile and try again.');
-			} else {
-				alert(errorMsg);
-			}
+			// Never show profile form - always show simple error
+			alert('Booking failed: ' + errorMsg);
+		} finally {
 			setBookingLoading(false);
 		}
 		// Force rebuild v2 - fix appointmentError issue - cache bust
