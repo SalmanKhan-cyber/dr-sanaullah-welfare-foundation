@@ -31,7 +31,8 @@ guestRouter.get('/test', (req, res) => {
 guestRouter.post('/', async (req, res) => {
 	console.log('🔍 Guest appointments endpoint accessed - VERSION 3.0 FINAL'); // Force redeploy
 	try {
-		const { doctor_id, appointment_date, appointment_time, reason, patient_details } = req.body || {};
+		const { doctor_id, appointment_date, appointment_time, reason } = req.body || {};
+		let patient_details = req.body?.patient_details;
 		
 		if (!doctor_id || !appointment_date || !appointment_time) {
 			return res.status(400).json({ error: 'doctor_id, appointment_date, and appointment_time are required' });
