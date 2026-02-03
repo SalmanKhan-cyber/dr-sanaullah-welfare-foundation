@@ -1,6 +1,6 @@
-// Simple frontend appointment sheet generator - VERSION 3.0 - NEW DESIGN
+// Simple frontend appointment sheet generator - VERSION 4.0 - EXACT MATCH DESIGN
 export function generateAppointmentSheetHTML(appointmentData) {
-    console.log('🎨 LOADING NEW PROFESSIONAL DESIGN v3.0');
+    console.log('🎨 LOADING EXACT MATCH DESIGN v4.0');
     const { doctor, patientDetails, appointmentDate, appointmentTime, reason } = appointmentData;
     
     return `
@@ -24,69 +24,69 @@ export function generateAppointmentSheetHTML(appointmentData) {
             .header {
                 background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
                 color: white;
-                padding: 20px;
+                padding: 15px 20px;
                 border-bottom: 3px solid #1e40af;
             }
             .header-content {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 15px;
+                margin-bottom: 10px;
             }
             .logo-section {
                 display: flex;
                 align-items: center;
-                gap: 15px;
+                gap: 12px;
             }
             .logo {
-                width: 60px;
-                height: 60px;
+                width: 50px;
+                height: 50px;
                 background: white;
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 24px;
+                font-size: 20px;
                 color: #1e40af;
                 font-weight: bold;
             }
             .organization-name {
-                font-size: 24px;
+                font-size: 20px;
                 font-weight: bold;
             }
             .tagline {
-                font-size: 14px;
+                font-size: 12px;
                 opacity: 0.9;
             }
             .appointment-id {
                 background: rgba(255, 255, 255, 0.2);
-                padding: 8px 15px;
-                border-radius: 20px;
+                padding: 6px 12px;
+                border-radius: 15px;
                 font-weight: bold;
-                font-size: 14px;
+                font-size: 12px;
             }
             .details-grid {
                 display: grid;
                 grid-template-columns: 1fr 1fr 1fr;
-                gap: 20px;
-                margin-top: 15px;
+                gap: 15px;
+                margin-top: 10px;
             }
             .detail-section {
                 background: rgba(255, 255, 255, 0.1);
-                padding: 15px;
-                border-radius: 10px;
+                padding: 12px;
+                border-radius: 8px;
                 backdrop-filter: blur(10px);
             }
             .detail-section h3 {
-                margin: 0 0 10px 0;
-                font-size: 14px;
+                margin: 0 0 8px 0;
+                font-size: 12px;
                 opacity: 0.9;
                 text-transform: uppercase;
-                letter-spacing: 1px;
+                letter-spacing: 0.5px;
             }
             .detail-item {
-                margin: 5px 0;
-                font-size: 13px;
+                margin: 4px 0;
+                font-size: 11px;
                 display: flex;
                 justify-content: space-between;
             }
@@ -99,26 +99,62 @@ export function generateAppointmentSheetHTML(appointmentData) {
             .main-body {
                 flex: 1;
                 background: white;
-                padding: 40px;
+                padding: 20px;
                 border: 2px dashed #e5e7eb;
-                margin: 20px;
-                border-radius: 10px;
+                margin: 15px;
+                border-radius: 8px;
                 display: flex;
-                align-items: center;
-                justify-content: center;
-                min-height: 33vh;
+                flex-direction: column;
+                min-height: 40vh;
             }
-            .blank-area {
+            .notes-header {
                 text-align: center;
-                color: #9ca3af;
-                font-style: italic;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #e5e7eb;
+            }
+            .notes-header h3 {
+                color: #374151;
+                font-size: 16px;
+                margin: 0 0 5px 0;
+            }
+            .notes-header p {
+                color: #6b7280;
+                font-size: 12px;
+                margin: 0;
+            }
+            .notes-area {
+                flex: 1;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+            .notes-column {
+                border: 1px solid #e5e7eb;
+                border-radius: 6px;
+                padding: 15px;
+            }
+            .notes-column h4 {
+                color: #374151;
+                font-size: 13px;
+                margin: 0 0 10px 0;
+                border-bottom: 1px solid #e5e7eb;
+                padding-bottom: 5px;
+            }
+            .notes-content {
+                min-height: 150px;
+                background: #f9fafb;
+                border-radius: 4px;
+                padding: 10px;
+                font-size: 11px;
+                color: #6b7280;
             }
             .footer {
                 background: #f9fafb;
-                padding: 15px 20px;
+                padding: 10px 20px;
                 border-top: 1px solid #e5e7eb;
                 text-align: center;
-                font-size: 12px;
+                font-size: 10px;
                 color: #6b7280;
             }
             @media print {
@@ -128,6 +164,10 @@ export function generateAppointmentSheetHTML(appointmentData) {
                     border: 2px dashed #333;
                     background: white !important;
                 }
+                .notes-content {
+                    background: white !important;
+                    border: 1px solid #333;
+                }
             }
         </style>
     </head>
@@ -136,7 +176,7 @@ export function generateAppointmentSheetHTML(appointmentData) {
             <div class="header">
                 <div class="header-content">
                     <div class="logo-section">
-                        <div class="logo">🏥</div>
+                        <div class="logo">DSWF</div>
                         <div>
                             <div class="organization-name">Dr. Sanaullah Welfare Foundation</div>
                             <div class="tagline">Access discounted healthcare services</div>
@@ -219,10 +259,25 @@ export function generateAppointmentSheetHTML(appointmentData) {
             </div>
             
             <div class="main-body">
-                <div class="blank-area">
-                    <h3>📝 Notes & Observations</h3>
-                    <p>This area is reserved for doctor's notes, prescriptions, and medical observations during the consultation.</p>
-                    <p style="margin-top: 20px; font-size: 14px;">Please arrive 15 minutes before your appointment time.</p>
+                <div class="notes-header">
+                    <h3>📝 Medical Notes & Observations</h3>
+                    <p>This section is reserved for doctor's examination, diagnosis, and treatment notes</p>
+                </div>
+                
+                <div class="notes-area">
+                    <div class="notes-column">
+                        <h4>🩺 Examination & Diagnosis</h4>
+                        <div class="notes-content">
+                            Patient's symptoms, vital signs, physical examination findings, and diagnosis...
+                        </div>
+                    </div>
+                    
+                    <div class="notes-column">
+                        <h4>💊 Treatment & Prescription</h4>
+                        <div class="notes-content">
+                            Prescribed medications, dosage instructions, treatment plan, and follow-up recommendations...
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -240,14 +295,14 @@ export function generateAppointmentSheetHTML(appointmentData) {
 }
 
 export function downloadAppointmentSheet(appointmentData) {
-    console.log('🎨 Generating NEW professional appointment sheet design v3.0...');
+    console.log('🎨 Generating EXACT MATCH appointment sheet design v4.0...');
     const html = generateAppointmentSheetHTML(appointmentData);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = `appointment-sheet-${Date.now()}-v3-PROFESSIONAL.html`;
+    link.download = `appointment-sheet-${Date.now()}-v4-EXACT-MATCH.html`;
     link.target = '_blank';
     document.body.appendChild(link);
     link.click();
