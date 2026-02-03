@@ -29,6 +29,8 @@ export default function InClinic() {
 	const [bookingLoading, setBookingLoading] = useState(false);
 	const [showProfileForm, setShowProfileForm] = useState(false);
 	const [bookingStep, setBookingStep] = useState('details'); // 'details' or 'datetime'
+	const [appointmentSheetUrl, setAppointmentSheetUrl] = useState('');
+	const [appointmentSheetFilename, setAppointmentSheetFilename] = useState('');
 
 	useEffect(() => {
 		fetchDoctors();
@@ -192,6 +194,10 @@ export default function InClinic() {
 				link.click();
 				document.body.removeChild(link);
 				console.log('✅ Appointment sheet download triggered');
+				
+				// Store sheet info for manual download
+				setAppointmentSheetUrl(response.appointment_sheet_url);
+				setAppointmentSheetFilename(response.appointment_sheet_filename || 'appointment-sheet.pdf');
 			} else {
 				console.log('⚠️ No appointment sheet URL in response');
 				console.log('🔍 Full response:', response);
@@ -570,6 +576,37 @@ export default function InClinic() {
 								</>
 							) : null // This should never happen with our current flow
 						}
+						
+						{/* Print Appointment Sheet Button */}
+						{appointmentSheetUrl && (
+							<div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+								<p className="text-green-800 font-semibold mb-3">✅ Appointment Booked Successfully!</p>
+								<div className="flex gap-3">
+									<button
+										onClick={() => {
+											const link = document.createElement('a');
+											link.href = appointmentSheetUrl;
+											link.download = appointmentSheetFilename;
+											link.target = '_blank';
+											document.body.appendChild(link);
+											link.click();
+											document.body.removeChild(link);
+										}}
+										className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700"
+									>
+										📄 Download Appointment Sheet
+									</button>
+									<button
+										onClick={() => {
+											window.open(appointmentSheetUrl, '_blank');
+										}}
+										className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700"
+									>
+										🖨️ Print Appointment Sheet
+									</button>
+								</div>
+							</div>
+						)}
 						</div>
 					</div>
 				</div>
