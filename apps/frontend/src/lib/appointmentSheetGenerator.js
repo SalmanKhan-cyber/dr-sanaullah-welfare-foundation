@@ -11,126 +11,226 @@ export function generateAppointmentSheetHTML(appointmentData) {
             body {
                 font-family: Arial, sans-serif;
                 margin: 0;
-                padding: 20px;
-                background: #f5f5f5;
+                padding: 0;
+                background: white;
             }
             .sheet {
-                max-width: 800px;
-                margin: 0 auto;
-                background: white;
-                padding: 30px;
-                border: 1px solid #ddd;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                max-width: 100%;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
             }
             .header {
-                text-align: center;
-                border-bottom: 2px solid #333;
-                padding-bottom: 20px;
-                margin-bottom: 30px;
+                background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+                color: white;
+                padding: 20px;
+                border-bottom: 3px solid #1e40af;
             }
-            .header h1 {
-                color: #333;
-                margin: 0;
-                font-size: 28px;
-            }
-            .section {
-                margin-bottom: 25px;
-            }
-            .section h2 {
-                color: #555;
-                border-bottom: 1px solid #ddd;
-                padding-bottom: 5px;
+            .header-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
                 margin-bottom: 15px;
-                font-size: 18px;
             }
-            .info-grid {
-                display: grid;
-                grid-template-columns: 200px 1fr;
-                gap: 10px;
-                margin-bottom: 10px;
+            .logo-section {
+                display: flex;
+                align-items: center;
+                gap: 15px;
             }
-            .info-label {
+            .logo {
+                width: 60px;
+                height: 60px;
+                background: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 24px;
+                color: #1e40af;
                 font-weight: bold;
-                color: #666;
             }
-            .info-value {
-                color: #333;
+            .organization-name {
+                font-size: 24px;
+                font-weight: bold;
             }
-            .footer {
-                margin-top: 40px;
-                padding-top: 20px;
-                border-top: 1px solid #ddd;
-                text-align: center;
-                color: #666;
+            .tagline {
+                font-size: 14px;
+                opacity: 0.9;
+            }
+            .appointment-id {
+                background: rgba(255, 255, 255, 0.2);
+                padding: 8px 15px;
+                border-radius: 20px;
+                font-weight: bold;
                 font-size: 14px;
             }
+            .details-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 20px;
+                margin-top: 15px;
+            }
+            .detail-section {
+                background: rgba(255, 255, 255, 0.1);
+                padding: 15px;
+                border-radius: 10px;
+                backdrop-filter: blur(10px);
+            }
+            .detail-section h3 {
+                margin: 0 0 10px 0;
+                font-size: 14px;
+                opacity: 0.9;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+            .detail-item {
+                margin: 5px 0;
+                font-size: 13px;
+                display: flex;
+                justify-content: space-between;
+            }
+            .detail-label {
+                opacity: 0.8;
+            }
+            .detail-value {
+                font-weight: bold;
+            }
+            .main-body {
+                flex: 1;
+                background: white;
+                padding: 40px;
+                border: 2px dashed #e5e7eb;
+                margin: 20px;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 33vh;
+            }
+            .blank-area {
+                text-align: center;
+                color: #9ca3af;
+                font-style: italic;
+            }
+            .footer {
+                background: #f9fafb;
+                padding: 15px 20px;
+                border-top: 1px solid #e5e7eb;
+                text-align: center;
+                font-size: 12px;
+                color: #6b7280;
+            }
             @media print {
-                body { background: white; }
-                .sheet { box-shadow: none; border: none; }
+                body { margin: 0; }
+                .sheet { height: 100vh; }
+                .main-body { 
+                    border: 2px dashed #333;
+                    background: white !important;
+                }
             }
         </style>
     </head>
     <body>
         <div class="sheet">
             <div class="header">
-                <h1>APPOINTMENT SHEET</h1>
-                <p>Dr. Sanaullah Welfare Foundation</p>
-            </div>
-            
-            <div class="section">
-                <h2>PATIENT INFORMATION</h2>
-                <div class="info-grid">
-                    <div class="info-label">Name:</div>
-                    <div class="info-value">${patientDetails.name}</div>
+                <div class="header-content">
+                    <div class="logo-section">
+                        <div class="logo">🏥</div>
+                        <div>
+                            <div class="organization-name">Dr. Sanaullah Welfare Foundation</div>
+                            <div class="tagline">Access discounted healthcare services</div>
+                        </div>
+                    </div>
+                    <div class="appointment-id">
+                        #APT-${Date.now().toString().slice(-6)}
+                    </div>
+                </div>
+                
+                <div class="details-grid">
+                    <div class="detail-section">
+                        <h3>👤 PATIENT INFORMATION</h3>
+                        <div class="detail-item">
+                            <span class="detail-label">Name:</span>
+                            <span class="detail-value">${patientDetails.name}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Phone:</span>
+                            <span class="detail-value">${patientDetails.phone}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Age:</span>
+                            <span class="detail-value">${patientDetails.age}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Gender:</span>
+                            <span class="detail-value">${patientDetails.gender}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">CNIC:</span>
+                            <span class="detail-value">${patientDetails.cnic}</span>
+                        </div>
+                    </div>
                     
-                    <div class="info-label">Phone:</div>
-                    <div class="info-value">${patientDetails.phone}</div>
+                    <div class="detail-section">
+                        <h3>🩺 DOCTOR INFORMATION</h3>
+                        <div class="detail-item">
+                            <span class="detail-label">Name:</span>
+                            <span class="detail-value">${doctor.name}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Specialization:</span>
+                            <span class="detail-value">${doctor.specialization}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Department:</span>
+                            <span class="detail-value">General Medicine</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Experience:</span>
+                            <span class="detail-value">10+ Years</span>
+                        </div>
+                    </div>
                     
-                    <div class="info-label">Age:</div>
-                    <div class="info-value">${patientDetails.age}</div>
-                    
-                    <div class="info-label">Gender:</div>
-                    <div class="info-value">${patientDetails.gender}</div>
-                    
-                    <div class="info-label">CNIC:</div>
-                    <div class="info-value">${patientDetails.cnic}</div>
-                    
-                    ${patientDetails.history ? `
-                    <div class="info-label">Medical History:</div>
-                    <div class="info-value">${patientDetails.history}</div>
-                    ` : ''}
+                    <div class="detail-section">
+                        <h3>📅 APPOINTMENT DETAILS</h3>
+                        <div class="detail-item">
+                            <span class="detail-label">Date:</span>
+                            <span class="detail-value">${appointmentDate}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Time:</span>
+                            <span class="detail-value">${appointmentTime}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Reason:</span>
+                            <span class="detail-value">${reason || 'General consultation'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Status:</span>
+                            <span class="detail-value">Confirmed</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Type:</span>
+                            <span class="detail-value">In-Clinic Visit</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <div class="section">
-                <h2>DOCTOR INFORMATION</h2>
-                <div class="info-grid">
-                    <div class="info-label">Doctor Name:</div>
-                    <div class="info-value">${doctor.name}</div>
-                    
-                    <div class="info-label">Specialization:</div>
-                    <div class="info-value">${doctor.specialization}</div>
-                </div>
-            </div>
-            
-            <div class="section">
-                <h2>APPOINTMENT DETAILS</h2>
-                <div class="info-grid">
-                    <div class="info-label">Date:</div>
-                    <div class="info-value">${appointmentDate}</div>
-                    
-                    <div class="info-label">Time:</div>
-                    <div class="info-value">${appointmentTime}</div>
-                    
-                    <div class="info-label">Reason:</div>
-                    <div class="info-value">${reason || 'General consultation'}</div>
+            <div class="main-body">
+                <div class="blank-area">
+                    <h3>📝 Notes & Observations</h3>
+                    <p>This area is reserved for doctor's notes, prescriptions, and medical observations during the consultation.</p>
+                    <p style="margin-top: 20px; font-size: 14px;">Please arrive 15 minutes before your appointment time.</p>
                 </div>
             </div>
             
             <div class="footer">
-                <p>Please arrive 15 minutes before your appointment time.</p>
-                <p>Bring this appointment sheet and any previous medical records.</p>
-                <p>Generated on: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+                <strong>Dr. Sanaullah Welfare Foundation</strong> | 
+                📍 Main Hospital Address | 
+                📞 Emergency: 123-456-7890 | 
+                🌐 www.drsanaullahwelfarefoundation.com | 
+                Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
             </div>
         </div>
     </body>
