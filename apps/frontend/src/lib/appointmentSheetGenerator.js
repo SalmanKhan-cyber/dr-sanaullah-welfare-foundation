@@ -239,13 +239,14 @@ export function generateAppointmentSheetHTML(appointmentData) {
 }
 
 export function downloadAppointmentSheet(appointmentData) {
+    console.log('🎨 Generating NEW professional appointment sheet design...');
     const html = generateAppointmentSheetHTML(appointmentData);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = `appointment-sheet-${Date.now()}.html`;
+    link.download = `appointment-sheet-${Date.now()}-v2.html`;
     link.target = '_blank';
     document.body.appendChild(link);
     link.click();
