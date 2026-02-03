@@ -192,7 +192,7 @@ guestRouter.post('/', async (req, res) => {
 			console.log('🔍 Generated filename:', filename);
 			
 			// Upload to Supabase storage
-			const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+			const { data: storageData, error: uploadError } = await supabaseAdmin.storage
 				.from('appointment-sheets')
 				.upload(filePath, pdfBuffer, {
 					contentType: 'application/pdf',
@@ -204,7 +204,7 @@ guestRouter.post('/', async (req, res) => {
 				throw uploadError;
 			}
 			
-			console.log('✅ PDF uploaded successfully:', uploadData);
+			console.log('✅ PDF uploaded successfully:', storageData);
 			
 			// Generate signed URL for immediate download
 			const { signedUrl } = await supabaseAdmin.storage
