@@ -5,7 +5,7 @@ import { downloadAppointmentCard, openAppointmentCard } from '../lib/appointment
 import { supabase } from '../lib/supabase';
 import { apiRequest } from '../lib/api';
 
-// FORCE REBUILD - NEW APPOINTMENT SHEET DESIGN v3.0 - CACHE BUST
+// FINAL FORCE REBUILD v4.0 - NEW BLUE HEADER DESIGN - CACHE BUST - MUST LOAD NEW DESIGN
 
 export default function InClinic() {
 	const navigate = useNavigate();
