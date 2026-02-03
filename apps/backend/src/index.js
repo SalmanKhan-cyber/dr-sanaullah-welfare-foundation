@@ -49,7 +49,8 @@ const corsOptions = {
     "https://drsanaullahwelfarefoundation.com",
     "https://www.drsanaullahwelfarefoundation.com",
     "https://dswff.pages.dev",
-    "https://app.drsanaullahwelfarefoundation.com"
+    "https://app.drsanaullahwelfarefoundation.com",
+    "https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
