@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { apiRequest } from '../lib/api';
+import { downloadAppointmentSheet, openAppointmentSheet } from '../lib/appointmentSheetGenerator.js';
 
 export default function DoctorsList() {
 	const navigate = useNavigate();
@@ -34,6 +35,7 @@ export default function DoctorsList() {
 	const [bookingLoading, setBookingLoading] = useState(false);
 	const [showProfileForm, setShowProfileForm] = useState(false);
 	const [bookingStep, setBookingStep] = useState('details'); // 'details' or 'datetime'
+	const [appointmentSheetData, setAppointmentSheetData] = useState(null);
 
 	// Check authentication and patient profile
 	useEffect(() => {
@@ -166,56 +168,40 @@ export default function DoctorsList() {
 			return;
 		}
 
-		// Always proceed with booking - patient details will be included below
-		// Don't return early even if no patient profile
+		// Validate patient details
+		if (!patientProfileForm.name || !patientProfileForm.phone || !patientProfileForm.age || !patientProfileForm.gender || !patientProfileForm.cnic) {
+			alert('Please fill in all patient details (Name, Phone, Age, Gender, CNIC).');
+			return;
+		}
 
 		setBookingLoading(true);
 		try {
-			const requestBody = {
-				doctor_id: selectedDoctor.id,
-				appointment_date: appointmentForm.appointment_date,
-				appointment_time: appointmentForm.appointment_time,
+			// Simple frontend-only booking - no backend needed
+			const appointmentData = {
+				doctor: {
+					name: selectedDoctor.name,
+					specialization: selectedDoctor.specialization
+				},
+				patientDetails: {
+					name: patientProfileForm.name,
+					phone: patientProfileForm.phone,
+					age: patientProfileForm.age,
+					gender: patientProfileForm.gender,
+					cnic: patientProfileForm.cnic,
+					history: patientProfileForm.history || null
+				},
+				appointmentDate: appointmentForm.appointment_date,
+				appointmentTime: appointmentForm.appointment_time,
 				reason: appointmentForm.reason || null
 			};
 
-			// Always include patient details for appointment sheet generation
-			const patientDetails = {
-				name: patientProfileForm.name || 'Guest Patient',
-				phone: patientProfileForm.phone || 'Not Provided',
-				age: parseInt(patientProfileForm.age) || 0,
-				gender: patientProfileForm.gender || 'other',
-				cnic: patientProfileForm.cnic || 'Not Provided',
-				history: patientProfileForm.history || null
-			};
-			
-			const finalRequestBody = {
-				...requestBody,
-				patient_details: patientDetails
-			};
-			
-			console.log('🔍 Frontend Debug - Sending patient_details:', patientDetails);
-			console.log('🔍 Frontend Debug - Name value:', patientProfileForm.name);
-			console.log('🔍 Frontend Debug - Complete request body:', finalRequestBody);
+			console.log('🔍 Creating appointment sheet with data:', appointmentData);
 
-			const response = await apiRequest('/api/appointments/guest', {
-				method: 'POST',
-				body: JSON.stringify(finalRequestBody)
-			});
+			// Generate and download appointment sheet immediately
+			downloadAppointmentSheet(appointmentData);
 			
-			// Handle appointment sheet download if available
-			if (response.appointment_sheet_url) {
-				console.log('🔍 Downloading appointment sheet:', response.appointment_sheet_url);
-				const link = document.createElement('a');
-				link.href = response.appointment_sheet_url;
-				link.download = response.appointment_sheet_filename || 'appointment-sheet.pdf';
-				link.target = '_blank'; // Open in new tab if download fails
-				document.body.appendChild(link);
-				link.click();
-				document.body.removeChild(link);
-				console.log('✅ Appointment sheet download triggered');
-			} else {
-				console.log('⚠️ No appointment sheet URL in response');
-			}
+			// Store for manual download/print buttons
+			setAppointmentSheetData(appointmentData);
 
 			alert('Appointment booked successfully! Your appointment sheet has been downloaded.');
 			setSelectedDoctor(null);
@@ -223,24 +209,15 @@ export default function DoctorsList() {
 			setShowProfileForm(false);
 			setBookingStep('details');
 			
-			// For guest users, DON'T navigate to dashboard - just reset and stay on page
-			if (!isAuthenticated) {
-				console.log('👤 Guest user - staying on booking page');
-				// Don't navigate anywhere for guest users
-			} else {
-				console.log('🔐 Authenticated user - navigating to dashboard');
-				navigate('/dashboard/patient');
-			}
+			// NEVER navigate anywhere - always stay on booking page
+			console.log('👤 Staying on booking page - no navigation');
+			
 		} catch (err) {
-			// Only show profile form for authenticated users with profile issues
-			if (isAuthenticated && err.message?.includes('Patient profile not found')) {
-				setHasPatientProfile(false);
-				setShowProfileForm(true);
-				setBookingLoading(false);
-			} else {
-				alert(err.message || 'Failed to book appointment');
-				setBookingLoading(false);
-			}
+			console.error('Booking error:', err);
+			const errorMsg = err.message || 'Failed to book appointment';
+			alert('Booking failed: ' + errorMsg);
+		} finally {
+			setBookingLoading(false);
 		}
 	}
 
