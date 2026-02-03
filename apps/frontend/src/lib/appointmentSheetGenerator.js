@@ -1,5 +1,6 @@
-// Simple frontend appointment sheet generator
+// Simple frontend appointment sheet generator - VERSION 3.0 - NEW DESIGN
 export function generateAppointmentSheetHTML(appointmentData) {
+    console.log('🎨 LOADING NEW PROFESSIONAL DESIGN v3.0');
     const { doctor, patientDetails, appointmentDate, appointmentTime, reason } = appointmentData;
     
     return `
@@ -239,14 +240,14 @@ export function generateAppointmentSheetHTML(appointmentData) {
 }
 
 export function downloadAppointmentSheet(appointmentData) {
-    console.log('🎨 Generating NEW professional appointment sheet design...');
+    console.log('🎨 Generating NEW professional appointment sheet design v3.0...');
     const html = generateAppointmentSheetHTML(appointmentData);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = `appointment-sheet-${Date.now()}-v2.html`;
+    link.download = `appointment-sheet-${Date.now()}-v3-PROFESSIONAL.html`;
     link.target = '_blank';
     document.body.appendChild(link);
     link.click();

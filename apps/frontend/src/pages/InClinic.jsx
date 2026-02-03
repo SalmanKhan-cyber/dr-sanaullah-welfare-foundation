@@ -4,6 +4,8 @@ import { downloadAppointmentSheet, openAppointmentSheet } from '../lib/appointme
 import { supabase } from '../lib/supabase';
 import { apiRequest } from '../lib/api';
 
+// FORCE REBUILD - NEW APPOINTMENT SHEET DESIGN v3.0 - CACHE BUST
+
 export default function InClinic() {
 	const navigate = useNavigate();
 	const [doctors, setDoctors] = useState([]);
