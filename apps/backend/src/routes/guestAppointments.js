@@ -88,7 +88,7 @@ guestRouter.post('/', async (req, res) => {
 			reason: reason || null,
 			consultation_fee: finalFee,
 			payment_status: 'pending',
-			status: 'scheduled',
+			status: 'pending', // Changed from 'scheduled' to 'pending' to match database constraint
 			guest_patient_name: patient_details.name,
 			guest_patient_phone: patient_details.phone,
 			guest_patient_age: patient_details.age,
@@ -97,7 +97,7 @@ guestRouter.post('/', async (req, res) => {
 			guest_patient_history: patient_details.history || null
 		});
 		
-		const { data: appointmentData, error: appointmentError } = await supabaseAdmin
+		const { data, error } = await supabaseAdmin
 			.from('appointments')
 			.insert({
 				patient_id: null, // No patient record for guests
@@ -107,8 +107,7 @@ guestRouter.post('/', async (req, res) => {
 				reason: reason || null,
 				consultation_fee: finalFee,
 				payment_status: 'pending',
-				status: 'scheduled',
-				// Store guest patient details directly in appointment
+				status: 'pending', // Changed from 'scheduled' to 'pending' to match database constraint
 				guest_patient_name: patient_details.name,
 				guest_patient_phone: patient_details.phone,
 				guest_patient_age: patient_details.age,
