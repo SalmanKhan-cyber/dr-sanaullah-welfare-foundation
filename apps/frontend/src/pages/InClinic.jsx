@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { downloadAppointmentSheet, openAppointmentSheet } from '../lib/appointmentSheetGenerator.js';
 import { downloadAppointmentCard, openAppointmentCard } from '../lib/appointmentCardGenerator.js';
+import { downloadAppointmentSlip, openAppointmentSlip } from '../lib/appointmentSlipGenerator.js';
 import { supabase } from '../lib/supabase';
 import { apiRequest } from '../lib/api';
 
@@ -578,13 +579,32 @@ export default function InClinic() {
 											onClick={() => downloadAppointmentSheet(appointmentSheetData)}
 											className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 text-sm"
 										>
-											� Download Sheet
+											📥 Download Sheet
 										</button>
 										<button
 											onClick={() => openAppointmentSheet(appointmentSheetData)}
 											className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 text-sm"
 										>
 											🖨️ Print Sheet
+										</button>
+									</div>
+								</div>
+								
+								{/* Print-Ready A5 Slip */}
+								<div className="mb-4">
+									<h4 className="text-sm font-semibold text-gray-700 mb-2">🖨️ Print-Ready A5 Slip (For Printing)</h4>
+									<div className="flex gap-3">
+										<button
+											onClick={() => downloadAppointmentSlip(appointmentSheetData)}
+											className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 text-sm"
+										>
+											📥 Download A5 Slip
+										</button>
+										<button
+											onClick={() => openAppointmentSlip(appointmentSheetData)}
+											className="flex-1 bg-pink-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-pink-700 text-sm"
+										>
+											🖨️ Print A5 Slip
 										</button>
 									</div>
 								</div>
@@ -597,7 +617,7 @@ export default function InClinic() {
 											onClick={() => downloadAppointmentCard(appointmentSheetData)}
 											className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 text-sm"
 										>
-											� Download Card
+											📥 Download Card
 										</button>
 										<button
 											onClick={() => openAppointmentCard(appointmentSheetData)}
