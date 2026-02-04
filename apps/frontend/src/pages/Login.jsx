@@ -448,6 +448,13 @@ export default function Login() {
 					if (profileData.profileImage) {
 						setUploadingImage(true);
 						try {
+							console.log('📸 Starting image upload for doctor registration:', {
+								fileName: profileData.profileImage.name,
+								fileSize: profileData.profileImage.size,
+								fileType: profileData.profileImage.type,
+								userId: userId
+							});
+							
 							const formData = new FormData();
 							formData.append('image', profileData.profileImage);
 							formData.append('userId', userId);
@@ -456,13 +463,18 @@ export default function Login() {
 								method: 'POST',
 								body: formData
 							});
+							
+							console.log('✅ Image upload successful:', uploadRes);
 							imageUrl = uploadRes.url;
 						} catch (uploadErr) {
+							console.error('❌ Image upload failed:', uploadErr);
 							console.warn('Image upload failed, backend will assign random avatar:', uploadErr);
 							// Continue - backend will assign random avatar
 						} finally {
 							setUploadingImage(false);
 						}
+					} else {
+						console.log('📸 No profile image provided, backend will assign random avatar');
 					}
 					
 					// Remove profileImage from profileData before sending
@@ -477,7 +489,7 @@ export default function Login() {
 							image_url: imageUrl // Will be null if upload failed, backend assigns random
 						})
 					});
-					console.log('✅ Doctor profile created');
+					console.log('✅ Doctor profile created with image_url:', imageUrl);
 				} catch (apiErr) {
 					console.error('Doctor profile creation failed:', apiErr);
 					// Don't throw - profile might already exist, which is fine for multiple profiles

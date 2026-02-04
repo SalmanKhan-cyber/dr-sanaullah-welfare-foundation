@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Doctor Image Upload</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="file"] { border: 1px solid #ccc; padding: 10px; width: 100%; }
+        input[type="text"] { border: 1px solid #ccc; padding: 10px; width: 100%; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>Test Doctor Image Upload</h1>
+    
+    <form id="uploadForm">
+        <div class="form-group">
+            <label for="userId">User ID:</label>
+            <input type="text" id="userId" value="test-user-123" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="imageFile">Select Image:</label>
+            <input type="file" id="imageFile" accept="image/*" required>
+        </div>
+        
+        <button type="submit">Upload Image</button>
+    </form>
+    
+    <div id="result"></div>
+    
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const userId = document.getElementById('userId').value;
+            const imageFile = document.getElementById('imageFile').files[0];
+            const resultDiv = document.getElementById('result');
+            
+            if (!imageFile) {
+                resultDiv.innerHTML = '<div class="error">Please select an image file</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="loading">Uploading image...</div>';
+            
+            try {
+                const formData = new FormData();
+                formData.append('image', imageFile);
+                formData.append('userId', userId);
+                
+                console.log('Uploading image:', {
+                    fileName: imageFile.name,
+                    fileSize: imageFile.size,
+                    fileType: imageFile.type,
+                    userId: userId
+                });
+                
+                // Try both endpoints
+                const endpoints = [
+                    'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app/api/upload/profile-image',
+                    'http://localhost:4000/api/upload/profile-image'
+                ];
+                
+                let uploadSuccess = false;
+                let lastError = null;
+                
+                for (const endpoint of endpoints) {
+                    try {
+                        console.log(`Trying endpoint: ${endpoint}`);
+                        
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        console.log(`Response from ${endpoint}:`, {
+                            status: response.status,
+                            ok: response.ok,
+                            statusText: response.statusText
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log('Upload successful:', data);
+                            
+                            resultDiv.innerHTML = `
+                                <div class="success">
+                                    <h3>✅ Upload Successful!</h3>
+                                    <p><strong>Endpoint:</strong> ${endpoint}</p>
+                                    <p><strong>Image URL:</strong> <a href="${data.url}" target="_blank">${data.url}</a></p>
+                                    <p><strong>Path:</strong> ${data.path}</p>
+                                    <img src="${data.url}" alt="Uploaded image" style="max-width: 200px; margin-top: 10px; border-radius: 5px;">
+                                </div>
+                            `;
+                            uploadSuccess = true;
+                            break;
+                        } else {
+                            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                            lastError = `HTTP ${response.status}: ${errorData.error || response.statusText}`;
+                            console.error(`Upload failed from ${endpoint}:`, lastError);
+                        }
+                    } catch (err) {
+                        lastError = err.message;
+                        console.error(`Network error from ${endpoint}:`, err);
+                    }
+                }
+                
+                if (!uploadSuccess) {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Upload Failed</h3>
+                            <p><strong>Last Error:</strong> ${lastError}</p>
+                            <p>Please check the browser console for more details.</p>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error('Upload error:', err);
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Upload Error</h3>
+                        <p>${err.message}</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
