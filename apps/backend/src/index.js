@@ -619,13 +619,14 @@ app.post('/api/upload/profile-image', upload.single('image'), async (req, res, n
 
 		console.log('📁 Preparing upload:', { fileName, path, fileExt });
 
-		// Try to create profiles bucket if it doesn't exist
+		// Create profiles bucket if it doesn't exist (with proper RLS bypass)
 		try {
+			console.log('🔍 Checking for profiles bucket...');
 			const { data: buckets } = await supabaseAdmin.storage.listBuckets();
 			const profilesBucket = buckets.find(b => b.name === 'profiles');
 			
 			if (!profilesBucket) {
-				console.log('Creating profiles bucket...');
+				console.log('🔧 Creating profiles bucket with service role...');
 				const { error: bucketError } = await supabaseAdmin.storage.createBucket('profiles', {
 					public: true,
 					fileSizeLimit: 5242880, // 5MB
@@ -633,16 +634,21 @@ app.post('/api/upload/profile-image', upload.single('image'), async (req, res, n
 				});
 				
 				if (bucketError) {
-					console.warn('Could not create profiles bucket:', bucketError);
+					console.error('❌ Failed to create profiles bucket:', bucketError);
+					throw new Error(`Failed to create profiles bucket: ${bucketError.message}`);
 				} else {
 					console.log('✅ Profiles bucket created successfully');
 				}
+			} else {
+				console.log('✅ Profiles bucket already exists');
 			}
 		} catch (bucketErr) {
-			console.warn('Error checking/creating buckets:', bucketErr);
+			console.error('❌ Error with profiles bucket:', bucketErr);
+			throw new Error(`Profiles bucket error: ${bucketErr.message}`);
 		}
 
-		// Upload to profiles bucket (more appropriate for profile images)
+		// Upload to profiles bucket using service role (bypasses RLS)
+		console.log('📤 Uploading to profiles bucket...');
 		const { error: uploadError } = await supabaseAdmin.storage
 			.from('profiles')
 			.upload(path, req.file.buffer, { 
@@ -651,28 +657,14 @@ app.post('/api/upload/profile-image', upload.single('image'), async (req, res, n
 			});
 
 		if (uploadError) {
-			console.error('Upload error details:', uploadError);
-			// Fallback to certificates bucket if profiles bucket fails
-			console.log('Trying fallback to certificates bucket...');
-			const { error: fallbackError } = await supabaseAdmin.storage
-				.from('certificates')
-				.upload(path, req.file.buffer, { 
-					contentType: req.file.mimetype,
-					upsert: false 
-				});
-			
-			if (fallbackError) {
-				throw new Error(`Upload failed to both buckets. Profiles: ${uploadError.message}, Certificates: ${fallbackError.message}`);
-			}
-			
-			console.log('✅ Upload successful to certificates bucket (fallback)');
-		} else {
-			console.log('✅ Upload successful to profiles bucket');
+			console.error('❌ Upload to profiles bucket failed:', uploadError);
+			throw new Error(`Upload to profiles bucket failed: ${uploadError.message}`);
 		}
+		
+		console.log('✅ Upload successful to profiles bucket');
 
-		// Get public URL from profiles bucket first, then certificates
+		// Get public URL from profiles bucket
 		let imageUrl = null;
-		let sourceBucket = 'profiles';
 		
 		try {
 			const { data: publicUrlData } = await supabaseAdmin.storage
@@ -682,29 +674,15 @@ app.post('/api/upload/profile-image', upload.single('image'), async (req, res, n
 			imageUrl = publicUrlData?.publicUrl;
 			console.log('🔗 Got public URL from profiles bucket:', imageUrl);
 		} catch (urlError) {
-			console.warn('Could not get public URL from profiles bucket:', urlError);
-		}
-		
-		// If profiles bucket URL doesn't work, try certificates bucket
-		if (!imageUrl) {
-			sourceBucket = 'certificates';
-			try {
-				const { data: publicUrlData } = await supabaseAdmin.storage
-					.from('certificates')
-					.getPublicUrl(path);
-				
-				imageUrl = publicUrlData?.publicUrl;
-				console.log('🔗 Got public URL from certificates bucket:', imageUrl);
-			} catch (urlError) {
-				console.warn('Could not get public URL from certificates bucket:', urlError);
-			}
+			console.error('❌ Could not get public URL from profiles bucket:', urlError);
+			throw new Error(`Failed to get public URL: ${urlError.message}`);
 		}
 
-		// If public URL doesn't work from either bucket, create a long-lived signed URL (1 year)
+		// If public URL doesn't work, create a signed URL (1 year)
 		if (!imageUrl) {
-			console.log(`Creating signed URL from ${sourceBucket} bucket...`);
+			console.log('Creating signed URL from profiles bucket...');
 			const { data: signedData, error: signedError } = await supabaseAdmin.storage
-				.from(sourceBucket)
+				.from('profiles')
 				.createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
 			
 			if (signedError) throw new Error(signedError.message);
@@ -712,12 +690,12 @@ app.post('/api/upload/profile-image', upload.single('image'), async (req, res, n
 			console.log('🔗 Created signed URL:', imageUrl);
 		}
 
-		console.log('🎉 Upload complete, returning:', { imageUrl, path, sourceBucket });
+		console.log('🎉 Upload complete, returning:', { imageUrl, path, sourceBucket: 'profiles' });
 
 		res.json({ 
 			url: imageUrl,
 			path,
-			sourceBucket
+			sourceBucket: 'profiles'
 		});
 	} catch (err) {
 		console.error('Profile image upload error:', err);
