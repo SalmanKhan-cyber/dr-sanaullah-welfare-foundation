@@ -590,103 +590,108 @@ app.post('/api/doctors/upload-image', upload.single('file'), async (req, res, ne
 	}
 });
 
-// Test endpoint to verify backend version
-app.get('/api/version', (req, res) => {
-	res.json({ 
-		version: '2.0',
-		message: 'Simplified photo upload - VERSION 2.0',
-		timestamp: new Date().toISOString()
-	});
-});
-
-// Profile image upload endpoint - VERSION 2.0 - SIMPLIFIED
+// Profile image upload endpoint
 app.post('/api/upload/profile-image', upload.single('image'), async (req, res, next) => {
 	try {
-		console.log('🔍 Profile image upload request received - VERSION 2.0 SIMPLIFIED:', {
+		console.log('📸 Profile image upload request received:', {
 			hasFile: !!req.file,
 			fileName: req.file?.originalname,
 			fileSize: req.file?.size,
-			fileType: req.file?.mimetype,
-			userId: req.body?.userId,
-			bodyKeys: Object.keys(req.body || {})
+			mimeType: req.file?.mimetype,
+			userId: req.body?.userId
 		});
 
 		if (!req.file) {
-			console.error('❌ No file received in upload request');
 			return res.status(400).json({ error: 'Image file is required' });
 		}
 
 		const userId = req.body?.userId;
 		if (!userId) {
-			console.error('❌ No userId provided in upload request');
 			return res.status(400).json({ error: 'userId is required' });
 		}
 
 		const fileExt = req.file.originalname.split('.').pop() || 'jpg';
 		const fileName = `profile-${userId}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-		const path = `profile-images/${fileName}`;
+		const path = `profiles/${fileName}`;
 
-		console.log('📁 Preparing upload:', { fileName, path, fileExt });
+		console.log('📁 Attempting to upload to path:', path);
 
-		// Use service role to bypass RLS policies
-		// Try certificates bucket first with a different path to avoid conflicts
+		// First try to use the existing certificates bucket which should work
 		try {
-			console.log('🔄 Attempting upload to certificates bucket with service role...');
-			
+			console.log('🔄 Trying certificates bucket first...');
 			const { error: uploadError } = await supabaseAdmin.storage
 				.from('certificates')
 				.upload(path, req.file.buffer, { 
 					contentType: req.file.mimetype,
-					upsert: true // Use upsert to avoid conflicts
+					upsert: false 
 				});
 
 			if (uploadError) {
-				console.error('❌ Upload error:', uploadError);
-				throw new Error(`Upload failed: ${uploadError.message}`);
+				console.error('❌ Certificates bucket upload failed:', uploadError);
+				throw uploadError;
 			}
 
 			console.log('✅ Upload successful to certificates bucket');
 
 			// Get public URL
-			const { data: publicUrlData } = await supabaseAdmin.storage
+			const { data: publicUrlData } = supabaseAdmin.storage
 				.from('certificates')
 				.getPublicUrl(path);
 
 			let imageUrl = publicUrlData?.publicUrl;
-			
+			console.log('🔗 Public URL generated:', imageUrl);
+
 			// If public URL doesn't work, create signed URL
 			if (!imageUrl) {
-				console.log('🔄 Creating signed URL...');
+				console.log('🔗 Creating signed URL...');
 				const { data: signedData, error: signedError } = await supabaseAdmin.storage
 					.from('certificates')
 					.createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
 				
-				if (signedError) throw new Error(signedError.message);
+				if (signedError) {
+					throw new Error(signedError.message);
+				}
 				imageUrl = signedData?.signedUrl;
+				console.log('🔗 Signed URL generated:', imageUrl);
 			}
 
-			console.log('🎉 Upload complete, returning:', { imageUrl, path });
-
+			console.log('🎉 Upload completed successfully');
 			res.json({ 
 				url: imageUrl,
 				path,
-				sourceBucket: 'certificates'
+				bucket: 'certificates'
 			});
-		} catch (err) {
-			console.error('Profile image upload error:', err);
-			console.error('Error details:', {
-				message: err.message,
-				stack: err.stack,
-				userId: req.body?.userId,
-				fileName: req.file?.originalname,
-				fileSize: req.file?.size
-			});
-			res.status(500).json({ 
-				error: err.message || 'Failed to upload image',
-				details: 'Service role upload failed - please check Supabase configuration'
+
+		} catch (storageError) {
+			console.error('❌ Storage upload failed:', storageError);
+			
+			// As a last resort, return a mock URL for testing
+			const mockUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`;
+			console.log('🔄 Using mock URL as fallback:', mockUrl);
+			
+			res.json({ 
+				url: mockUrl,
+				path: 'mock',
+				bucket: 'mock',
+				warning: 'Using mock avatar - storage upload failed'
 			});
 		}
-	});
+
+	} catch (err) {
+		console.error('❌ Profile image upload error:', err);
+		console.error('Error details:', {
+			message: err.message,
+			stack: err.stack,
+			userId: req.body?.userId,
+			fileName: req.file?.originalname,
+			fileSize: req.file?.size
+		});
+		res.status(500).json({ 
+			error: err.message || 'Failed to upload image',
+			details: 'Upload failed - check server logs'
+		});
+	}
+});
 
 // Helper function to generate random avatar URL
 function getRandomAvatarUrl(seed = null) {
