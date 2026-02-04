@@ -615,103 +615,69 @@ app.post('/api/upload/profile-image', upload.single('image'), async (req, res, n
 
 		const fileExt = req.file.originalname.split('.').pop() || 'jpg';
 		const fileName = `profile-${userId}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-		const path = `profiles/${fileName}`;
+		const path = `profile-images/${fileName}`;
 
 		console.log('📁 Preparing upload:', { fileName, path, fileExt });
 
-		// Create profiles bucket if it doesn't exist (with proper RLS bypass)
+		// Use service role to bypass RLS policies
+		// Try certificates bucket first with a different path to avoid conflicts
 		try {
-			console.log('🔍 Checking for profiles bucket...');
-			const { data: buckets } = await supabaseAdmin.storage.listBuckets();
-			const profilesBucket = buckets.find(b => b.name === 'profiles');
+			console.log('🔄 Attempting upload to certificates bucket with service role...');
 			
-			if (!profilesBucket) {
-				console.log('🔧 Creating profiles bucket with service role...');
-				const { error: bucketError } = await supabaseAdmin.storage.createBucket('profiles', {
-					public: true,
-					fileSizeLimit: 5242880, // 5MB
-					allowedMimeTypes: ['image/*']
+			const { error: uploadError } = await supabaseAdmin.storage
+				.from('certificates')
+				.upload(path, req.file.buffer, { 
+					contentType: req.file.mimetype,
+					upsert: true // Use upsert to avoid conflicts
 				});
-				
-				if (bucketError) {
-					console.error('❌ Failed to create profiles bucket:', bucketError);
-					throw new Error(`Failed to create profiles bucket: ${bucketError.message}`);
-				} else {
-					console.log('✅ Profiles bucket created successfully');
-				}
-			} else {
-				console.log('✅ Profiles bucket already exists');
+
+			if (uploadError) {
+				console.error('❌ Upload error:', uploadError);
+				throw new Error(`Upload failed: ${uploadError.message}`);
 			}
-		} catch (bucketErr) {
-			console.error('❌ Error with profiles bucket:', bucketErr);
-			throw new Error(`Profiles bucket error: ${bucketErr.message}`);
-		}
 
-		// Upload to profiles bucket using service role (bypasses RLS)
-		console.log('📤 Uploading to profiles bucket...');
-		const { error: uploadError } = await supabaseAdmin.storage
-			.from('profiles')
-			.upload(path, req.file.buffer, { 
-				contentType: req.file.mimetype,
-				upsert: false 
-			});
+			console.log('✅ Upload successful to certificates bucket');
 
-		if (uploadError) {
-			console.error('❌ Upload to profiles bucket failed:', uploadError);
-			throw new Error(`Upload to profiles bucket failed: ${uploadError.message}`);
-		}
-		
-		console.log('✅ Upload successful to profiles bucket');
-
-		// Get public URL from profiles bucket
-		let imageUrl = null;
-		
-		try {
+			// Get public URL
 			const { data: publicUrlData } = await supabaseAdmin.storage
-				.from('profiles')
+				.from('certificates')
 				.getPublicUrl(path);
+
+			let imageUrl = publicUrlData?.publicUrl;
 			
-			imageUrl = publicUrlData?.publicUrl;
-			console.log('🔗 Got public URL from profiles bucket:', imageUrl);
-		} catch (urlError) {
-			console.error('❌ Could not get public URL from profiles bucket:', urlError);
-			throw new Error(`Failed to get public URL: ${urlError.message}`);
+			// If public URL doesn't work, create signed URL
+			if (!imageUrl) {
+				console.log('🔄 Creating signed URL...');
+				const { data: signedData, error: signedError } = await supabaseAdmin.storage
+					.from('certificates')
+					.createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
+				
+				if (signedError) throw new Error(signedError.message);
+				imageUrl = signedData?.signedUrl;
+			}
+
+			console.log('🎉 Upload complete, returning:', { imageUrl, path });
+
+			res.json({ 
+				url: imageUrl,
+				path,
+				sourceBucket: 'certificates'
+			});
+		} catch (err) {
+			console.error('Profile image upload error:', err);
+			console.error('Error details:', {
+				message: err.message,
+				stack: err.stack,
+				userId: req.body?.userId,
+				fileName: req.file?.originalname,
+				fileSize: req.file?.size
+			});
+			res.status(500).json({ 
+				error: err.message || 'Failed to upload image',
+				details: 'Service role upload failed - please check Supabase configuration'
+			});
 		}
-
-		// If public URL doesn't work, create a signed URL (1 year)
-		if (!imageUrl) {
-			console.log('Creating signed URL from profiles bucket...');
-			const { data: signedData, error: signedError } = await supabaseAdmin.storage
-				.from('profiles')
-				.createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
-			
-			if (signedError) throw new Error(signedError.message);
-			imageUrl = signedData?.signedUrl;
-			console.log('🔗 Created signed URL:', imageUrl);
-		}
-
-		console.log('🎉 Upload complete, returning:', { imageUrl, path, sourceBucket: 'profiles' });
-
-		res.json({ 
-			url: imageUrl,
-			path,
-			sourceBucket: 'profiles'
-		});
-	} catch (err) {
-		console.error('Profile image upload error:', err);
-		console.error('Error details:', {
-			message: err.message,
-			stack: err.stack,
-			userId: req.body?.userId,
-			fileName: req.file?.originalname,
-			fileSize: req.file?.size
-		});
-		res.status(500).json({ 
-			error: err.message || 'Failed to upload image',
-			details: 'Row Level Security policy violation - please check Supabase storage configuration'
-		});
-	}
-});
+	});
 
 // Helper function to generate random avatar URL
 function getRandomAvatarUrl(seed = null) {
