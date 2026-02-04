@@ -233,33 +233,22 @@ export function generateAppointmentSlipHTML(appointmentData) {
             /* Notes Section */
             .notes-section {
                 flex: 1;
-                border: 2mm dashed #bdc3c7;
-                border-radius: 2mm;
-                padding: 6mm;
-                background: #fff;
+                background: white;
+                padding: 0;
                 margin-bottom: 8mm;
+                border: none;
             }
             
             .notes-title {
-                font-size: 10pt;
-                font-weight: bold;
-                color: #7f8c8d;
-                margin-bottom: 3mm;
-                text-align: center;
+                display: none; /* Hide the title completely */
             }
             
             .notes-area {
                 min-height: 30mm;
-                background: #fafafa;
-                border-radius: 1mm;
-                padding: 4mm;
-                font-size: 9pt;
-                color: #95a5a6;
-                font-style: italic;
-                text-align: center;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                background: white;
+                border: none;
+                padding: 0;
+                margin: 0;
             }
             
             /* Footer */
@@ -388,9 +377,7 @@ export function generateAppointmentSlipHTML(appointmentData) {
                 
                 <!-- Notes Section -->
                 <div class="notes-section">
-                    <div class="notes-title">📝 DOCTOR'S NOTES & OBSERVATIONS</div>
                     <div class="notes-area">
-                        This area is reserved for doctor's examination notes, diagnosis, prescriptions, and medical observations during consultation.
                     </div>
                 </div>
             </div>

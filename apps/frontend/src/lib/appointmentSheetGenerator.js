@@ -103,19 +103,17 @@ export function generateAppointmentSheetHTML(appointmentData) {
             .main-body {
                 flex: 1;
                 background: white;
-                padding: 40px;
-                border: 2px dashed #e5e7eb;
-                margin: 20px;
-                border-radius: 10px;
+                padding: 0;
+                margin: 0;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 min-height: 33vh;
             }
             .blank-area {
-                text-align: center;
-                color: #9ca3af;
-                font-style: italic;
+                width: 100%;
+                height: 100%;
+                background: white;
             }
             .footer {
                 background: #f9fafb;
@@ -129,8 +127,10 @@ export function generateAppointmentSheetHTML(appointmentData) {
                 body { margin: 0; }
                 .sheet { height: 100vh; }
                 .main-body { 
-                    border: 2px dashed #333;
                     background: white !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    border: none !important;
                 }
             }
         </style>
@@ -227,7 +227,6 @@ export function generateAppointmentSheetHTML(appointmentData) {
             
             <div class="main-body">
                 <div class="blank-area">
-                    <!-- Completely blank area for doctor's notes -->
                 </div>
             </div>
             
