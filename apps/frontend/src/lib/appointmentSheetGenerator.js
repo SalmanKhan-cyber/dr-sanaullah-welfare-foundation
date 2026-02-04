@@ -141,7 +141,8 @@ export function generateAppointmentSheetHTML(appointmentData) {
                 <div class="header-content">
                     <div class="logo-section">
                         <div class="logo">
-                            <img src="/logo1.jpeg" alt="Dr. Sanaullah Welfare Foundation Logo" />
+                            <img src="/logo1.jpeg" alt="Dr. Sanaullah Welfare Foundation Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; font-size:24px; color:#1e40af; font-weight:bold;">🏥</div>
                         </div>
                         <div>
                             <div class="organization-name">Dr. Sanaullah Welfare Foundation</div>
@@ -226,9 +227,7 @@ export function generateAppointmentSheetHTML(appointmentData) {
             
             <div class="main-body">
                 <div class="blank-area">
-                    <h3>📝 Notes & Observations</h3>
-                    <p>This area is reserved for doctor's notes, prescriptions, and medical observations during the consultation.</p>
-                    <p style="margin-top: 20px; font-size: 14px;">Please arrive 15 minutes before your appointment time.</p>
+                    <!-- Completely blank area for doctor's notes -->
                 </div>
             </div>
             

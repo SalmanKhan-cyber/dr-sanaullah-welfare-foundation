@@ -307,7 +307,8 @@ export function generateAppointmentSlipHTML(appointmentData) {
                 <div class="header-content">
                     <div class="logo-section">
                         <div class="logo">
-                            <img src="/logo1.jpeg" alt="Dr. Sanaullah Welfare Foundation Logo" />
+                            <img src="/logo1.jpeg" alt="Dr. Sanaullah Welfare Foundation Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; font-size:16mm; color:#16a085; font-weight:bold;">🏥</div>
                         </div>
                         <div class="foundation-info">
                             <h1>Dr. Sanaullah Welfare Foundation</h1>
