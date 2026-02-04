@@ -46,9 +46,13 @@ export function generateNewAppointmentHTML(appointmentData) {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 24px;
-                color: #FF6B6B;
-                font-weight: bold;
+                overflow: hidden;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .logo img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
             }
             .organization-name {
                 font-size: 24px;
@@ -136,7 +140,9 @@ export function generateNewAppointmentHTML(appointmentData) {
             <div class="header">
                 <div class="header-content">
                     <div class="logo-section">
-                        <div class="logo">🏥</div>
+                        <div class="logo">
+                            <img src="/logo1.jpeg" alt="Dr. Sanaullah Welfare Foundation Logo" />
+                        </div>
                         <div>
                             <div class="organization-name">Dr. Sanaullah Welfare Foundation</div>
                             <div class="tagline">Access discounted healthcare services</div>

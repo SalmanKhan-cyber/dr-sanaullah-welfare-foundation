@@ -69,12 +69,14 @@ export function generateAppointmentSlipHTML(appointmentData) {
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                overflow: hidden;
                 box-shadow: 0 2mm 4mm rgba(0,0,0,0.2);
             }
             
-            .logo svg {
-                width: 16mm;
-                height: 16mm;
+            .logo img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
             }
             
             .foundation-info h1 {
@@ -305,12 +307,7 @@ export function generateAppointmentSlipHTML(appointmentData) {
                 <div class="header-content">
                     <div class="logo-section">
                         <div class="logo">
-                            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="50" cy="50" r="45" fill="#16a085" stroke="#fff" stroke-width="2"/>
-                                <rect x="42" y="25" width="16" height="50" fill="#fff" rx="2"/>
-                                <rect x="25" y="42" width="50" height="16" fill="#fff" rx="2"/>
-                                <text x="50" y="85" font-family="Arial" font-size="8" font-weight="bold" text-anchor="middle" fill="#16a085">DSWF</text>
-                            </svg>
+                            <img src="/logo1.jpeg" alt="Dr. Sanaullah Welfare Foundation Logo" />
                         </div>
                         <div class="foundation-info">
                             <h1>Dr. Sanaullah Welfare Foundation</h1>
