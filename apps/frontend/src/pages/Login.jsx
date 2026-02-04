@@ -443,7 +443,7 @@ export default function Login() {
 			
 			if (selectedRole === 'doctor' && Object.keys(profileData).length > 0) {
 				try {
-					// Upload image if provided
+					// Upload image if provided - MANDATORY for doctors
 					let imageUrl = null;
 					if (profileData.profileImage) {
 						setUploadingImage(true);
@@ -466,15 +466,27 @@ export default function Login() {
 							
 							console.log('✅ Image upload successful:', uploadRes);
 							imageUrl = uploadRes.url;
+							
+							// Verify we got a valid URL
+							if (!imageUrl) {
+								throw new Error('Upload succeeded but no URL returned');
+							}
 						} catch (uploadErr) {
 							console.error('❌ Image upload failed:', uploadErr);
-							console.warn('Image upload failed, backend will assign random avatar:', uploadErr);
-							// Continue - backend will assign random avatar
+							setUploadingImage(false);
+							
+							// Show user-friendly error message
+							alert(`❌ Photo upload failed: ${uploadErr.message || 'Unknown error'}. Please try uploading the photo again or contact support.`);
+							
+							// Don't continue - stop the registration process
+							throw new Error(`Photo upload failed: ${uploadErr.message}`);
 						} finally {
 							setUploadingImage(false);
 						}
 					} else {
 						console.log('📸 No profile image provided, backend will assign random avatar');
+						// For doctors, we should require an image - show warning
+						alert('⚠️ Warning: No profile photo provided. A random avatar will be assigned. For better professional appearance, please upload a photo.');
 					}
 					
 					// Remove profileImage from profileData before sending
