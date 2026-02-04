@@ -606,26 +606,90 @@ app.post('/api/upload/profile-image', upload.single('image'), async (req, res, n
 		const fileName = `profile-${userId}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 		const path = `profiles/${fileName}`;
 
-		// Upload to Supabase storage (use 'certificates' bucket or create a 'profiles' bucket)
+		// Try to create profiles bucket if it doesn't exist
+		try {
+			const { data: buckets } = await supabaseAdmin.storage.listBuckets();
+			const profilesBucket = buckets.find(b => b.name === 'profiles');
+			
+			if (!profilesBucket) {
+				console.log('Creating profiles bucket...');
+				const { error: bucketError } = await supabaseAdmin.storage.createBucket('profiles', {
+					public: true,
+					fileSizeLimit: 5242880, // 5MB
+					allowedMimeTypes: ['image/*']
+				});
+				
+				if (bucketError) {
+					console.warn('Could not create profiles bucket:', bucketError);
+				} else {
+					console.log('✅ Profiles bucket created successfully');
+				}
+			}
+		} catch (bucketErr) {
+			console.warn('Error checking/creating buckets:', bucketErr);
+		}
+
+		// Upload to profiles bucket (more appropriate for profile images)
 		const { error: uploadError } = await supabaseAdmin.storage
-			.from('certificates')
+			.from('profiles')
 			.upload(path, req.file.buffer, { 
 				contentType: req.file.mimetype,
 				upsert: false 
 			});
 
-		if (uploadError) throw new Error(uploadError.message);
-
-		// Get public URL (works if bucket is public)
-		const { data: publicUrlData } = supabaseAdmin.storage
-			.from('certificates')
-			.getPublicUrl(path);
-
-		// If public URL doesn't work, create a long-lived signed URL (1 year)
-		let imageUrl = publicUrlData?.publicUrl;
-		if (!imageUrl) {
-			const { data: signedData, error: signedError } = await supabaseAdmin.storage
+		if (uploadError) {
+			console.error('Upload error details:', uploadError);
+			// Fallback to certificates bucket if profiles bucket fails
+			console.log('Trying fallback to certificates bucket...');
+			const { error: fallbackError } = await supabaseAdmin.storage
 				.from('certificates')
+				.upload(path, req.file.buffer, { 
+					contentType: req.file.mimetype,
+					upsert: false 
+				});
+			
+			if (fallbackError) {
+				throw new Error(`Upload failed to both buckets. Profiles: ${uploadError.message}, Certificates: ${fallbackError.message}`);
+			}
+			
+			console.log('✅ Upload successful to certificates bucket (fallback)');
+		} else {
+			console.log('✅ Upload successful to profiles bucket');
+		}
+
+		// Get public URL from profiles bucket first, then certificates
+		let imageUrl = null;
+		let sourceBucket = 'profiles';
+		
+		try {
+			const { data: publicUrlData } = await supabaseAdmin.storage
+				.from('profiles')
+				.getPublicUrl(path);
+			
+			imageUrl = publicUrlData?.publicUrl;
+		} catch (urlError) {
+			console.warn('Could not get public URL from profiles bucket:', urlError);
+		}
+		
+		// If profiles bucket URL doesn't work, try certificates bucket
+		if (!imageUrl) {
+			sourceBucket = 'certificates';
+			try {
+				const { data: publicUrlData } = await supabaseAdmin.storage
+					.from('certificates')
+					.getPublicUrl(path);
+				
+				imageUrl = publicUrlData?.publicUrl;
+			} catch (urlError) {
+				console.warn('Could not get public URL from certificates bucket:', urlError);
+			}
+		}
+
+		// If public URL doesn't work from either bucket, create a long-lived signed URL (1 year)
+		if (!imageUrl) {
+			console.log(`Creating signed URL from ${sourceBucket} bucket...`);
+			const { data: signedData, error: signedError } = await supabaseAdmin.storage
+				.from(sourceBucket)
 				.createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
 			
 			if (signedError) throw new Error(signedError.message);
@@ -638,7 +702,17 @@ app.post('/api/upload/profile-image', upload.single('image'), async (req, res, n
 		});
 	} catch (err) {
 		console.error('Profile image upload error:', err);
-		res.status(500).json({ error: err.message || 'Failed to upload image' });
+		console.error('Error details:', {
+			message: err.message,
+			stack: err.stack,
+			userId: req.body?.userId,
+			fileName: req.file?.originalname,
+			fileSize: req.file?.size
+		});
+		res.status(500).json({ 
+			error: err.message || 'Failed to upload image',
+			details: 'Row Level Security policy violation - please check Supabase storage configuration'
+		});
 	}
 });
 
