@@ -590,10 +590,19 @@ app.post('/api/doctors/upload-image', upload.single('file'), async (req, res, ne
 	}
 });
 
-// Profile image upload endpoint
+// Test endpoint to verify backend version
+app.get('/api/version', (req, res) => {
+	res.json({ 
+		version: '2.0',
+		message: 'Simplified photo upload - VERSION 2.0',
+		timestamp: new Date().toISOString()
+	});
+});
+
+// Profile image upload endpoint - VERSION 2.0 - SIMPLIFIED
 app.post('/api/upload/profile-image', upload.single('image'), async (req, res, next) => {
 	try {
-		console.log('🔍 Profile image upload request received:', {
+		console.log('🔍 Profile image upload request received - VERSION 2.0 SIMPLIFIED:', {
 			hasFile: !!req.file,
 			fileName: req.file?.originalname,
 			fileSize: req.file?.size,
