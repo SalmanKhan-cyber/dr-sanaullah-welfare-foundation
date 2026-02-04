@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { downloadA5Appointment, openA5Appointment } from '../lib/a5AppointmentGenerator.js';
+import { downloadAppointmentSheet, openAppointmentSheet } from '../lib/appointmentSheetGenerator.js';
 import { downloadAppointmentCard, openAppointmentCard } from '../lib/appointmentCardGenerator.js';
 import { downloadAppointmentSlip, openAppointmentSlip } from '../lib/appointmentSlipGenerator.js';
 import { supabase } from '../lib/supabase';
 import { apiRequest } from '../lib/api';
 
-// � A5 PORTRAIT APPOINTMENT SHEET - 148×210mm (1748×2480px at 300 DPI)
+// 🎨🎨🎨 FINAL FORCE REBUILD v5.0 - BLANK AREA - BLUE HEADER - CACHE BUST - MUST LOAD NEW DESIGN
 
 export default function InClinic() {
 	const navigate = useNavigate();
@@ -192,10 +192,10 @@ export default function InClinic() {
 				reason: appointmentForm.reason || null
 			};
 
-			console.log('� Creating A5 appointment sheet with data:', appointmentData);
+			console.log('🔍 Creating FINAL appointment sheet with data:', appointmentData);
 
-			// Generate and download A5 appointment sheet immediately
-			downloadA5Appointment(appointmentData);
+			// Generate and download FINAL appointment sheet immediately
+			downloadAppointmentSheet(appointmentData);
 			
 			// Store for manual download/print buttons
 			setAppointmentSheetData(appointmentData);
@@ -571,21 +571,21 @@ export default function InClinic() {
 							<div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
 								<p className="text-green-800 font-semibold mb-3">✅ Appointment Booked Successfully!</p>
 								
-								{/* A5 Appointment Sheet */}
+								{/* FINAL Appointment Sheet */}
 								<div className="mb-4">
-									<h4 className="text-sm font-semibold text-gray-700 mb-2">📄 A5 Appointment Sheet (148×210mm)</h4>
+									<h4 className="text-sm font-semibold text-gray-700 mb-2">📄 FINAL Appointment Sheet (Blue Design - Blank Area)</h4>
 									<div className="flex gap-3">
 										<button
-											onClick={() => downloadA5Appointment(appointmentSheetData)}
+											onClick={() => downloadAppointmentSheet(appointmentSheetData)}
 											className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 text-sm"
 										>
-											📥 Download A5 Sheet
+											📥 Download FINAL Sheet
 										</button>
 										<button
-											onClick={() => openA5Appointment(appointmentSheetData)}
+											onClick={() => openAppointmentSheet(appointmentSheetData)}
 											className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 text-sm"
 										>
-											🖨️ Print A5 Sheet
+											🖨️ Print FINAL Sheet
 										</button>
 									</div>
 								</div>

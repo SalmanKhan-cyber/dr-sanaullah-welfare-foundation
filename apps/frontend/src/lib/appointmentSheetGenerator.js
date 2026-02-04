@@ -1,6 +1,6 @@
-// Simple frontend appointment sheet generator - VERSION 4.0 - FINAL NEW DESIGN
+// Simple frontend appointment sheet generator - VERSION 5.0 - FINAL BLANK AREA - BLUE HEADER - CACHE BUST
 export function generateAppointmentSheetHTML(appointmentData) {
-    console.log('🎨🎨🎨 LOADING FINAL PROFESSIONAL DESIGN v4.0 - NEW BLUE HEADER!!!');
+    console.log('🎨🎨🎨 LOADING FINAL PROFESSIONAL DESIGN v5.0 - BLUE HEADER - BLANK AREA!!!');
     const { doctor, patientDetails, appointmentDate, appointmentTime, reason } = appointmentData;
     
     return `
@@ -245,14 +245,14 @@ export function generateAppointmentSheetHTML(appointmentData) {
 }
 
 export function downloadAppointmentSheet(appointmentData) {
-    console.log('🎨🎨🎨 GENERATING FINAL PROFESSIONAL DESIGN v4.0 - BLUE HEADER!!!');
+    console.log('🎨🎨🎨 GENERATING FINAL PROFESSIONAL DESIGN v5.0 - BLUE HEADER - BLANK AREA!!!');
     const html = generateAppointmentSheetHTML(appointmentData);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = `appointment-sheet-${Date.now()}-v4-FINAL-BLUE-HEADER.html`;
+    link.download = `FINAL-appointment-sheet-${Date.now()}-v5-BLANK-AREA.html`;
     link.target = '_blank';
     document.body.appendChild(link);
     link.click();
