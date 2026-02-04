@@ -593,26 +593,45 @@ app.post('/api/doctors/upload-image', upload.single('file'), async (req, res, ne
 // Profile image upload endpoint
 app.post('/api/upload/profile-image', upload.single('image'), async (req, res, next) => {
 	try {
+		console.log('📸 Profile image upload request received');
+		console.log('📸 Request headers:', Object.keys(req.headers));
+		console.log('📸 Request body keys:', Object.keys(req.body || {}));
+		console.log('📸 File info:', req.file ? {
+			originalname: req.file.originalname,
+			size: req.file.size,
+			mimetype: req.file.mimetype,
+			buffer: req.file.buffer ? 'Buffer present (' + req.file.buffer.length + ' bytes)' : 'No buffer'
+		} : 'No file');
+		
 		if (!req.file) {
+			console.log('❌ No file in request');
 			return res.status(400).json({ error: 'Image file is required' });
 		}
 
 		const userId = req.body?.userId;
+		console.log('📸 User ID from request:', userId);
+		
 		if (!userId) {
+			console.log('❌ No userId in request');
 			return res.status(400).json({ error: 'userId is required' });
 		}
 
 		const fileExt = req.file.originalname.split('.').pop() || 'jpg';
 		const fileName = `profile-${userId}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 		const path = `profiles/${fileName}`;
+		
+		console.log('📸 Generated filename:', fileName);
+		console.log('📸 Generated path:', path);
 
 		// Try to create profiles bucket if it doesn't exist
 		try {
+			console.log('📸 Checking buckets...');
 			const { data: buckets } = await supabaseAdmin.storage.listBuckets();
+			console.log('📸 Available buckets:', buckets.map(b => b.name));
 			const profilesBucket = buckets.find(b => b.name === 'profiles');
 			
 			if (!profilesBucket) {
-				console.log('Creating profiles bucket...');
+				console.log('📸 Creating profiles bucket...');
 				const { error: bucketError } = await supabaseAdmin.storage.createBucket('profiles', {
 					public: true,
 					fileSizeLimit: 5242880, // 5MB
@@ -620,16 +639,19 @@ app.post('/api/upload/profile-image', upload.single('image'), async (req, res, n
 				});
 				
 				if (bucketError) {
-					console.warn('Could not create profiles bucket:', bucketError);
+					console.warn('📸 Could not create profiles bucket:', bucketError);
 				} else {
 					console.log('✅ Profiles bucket created successfully');
 				}
+			} else {
+				console.log('✅ Profiles bucket already exists');
 			}
 		} catch (bucketErr) {
-			console.warn('Error checking/creating buckets:', bucketErr);
+			console.warn('📸 Error checking/creating buckets:', bucketErr);
 		}
 
 		// Upload to profiles bucket (more appropriate for profile images)
+		console.log('📸 Attempting upload to profiles bucket...');
 		const { error: uploadError } = await supabaseAdmin.storage
 			.from('profiles')
 			.upload(path, req.file.buffer, { 
@@ -638,9 +660,8 @@ app.post('/api/upload/profile-image', upload.single('image'), async (req, res, n
 			});
 
 		if (uploadError) {
-			console.error('Upload error details:', uploadError);
-			// Fallback to certificates bucket if profiles bucket fails
-			console.log('Trying fallback to certificates bucket...');
+			console.error('📸 Upload error to profiles bucket:', uploadError);
+			console.log('📸 Trying fallback to certificates bucket...');
 			const { error: fallbackError } = await supabaseAdmin.storage
 				.from('certificates')
 				.upload(path, req.file.buffer, { 
@@ -649,6 +670,7 @@ app.post('/api/upload/profile-image', upload.single('image'), async (req, res, n
 				});
 			
 			if (fallbackError) {
+				console.error('📸 Fallback upload error:', fallbackError);
 				throw new Error(`Upload failed to both buckets. Profiles: ${uploadError.message}, Certificates: ${fallbackError.message}`);
 			}
 			
@@ -662,47 +684,56 @@ app.post('/api/upload/profile-image', upload.single('image'), async (req, res, n
 		let sourceBucket = 'profiles';
 		
 		try {
+			console.log('📸 Getting public URL from profiles bucket...');
 			const { data: publicUrlData } = await supabaseAdmin.storage
 				.from('profiles')
 				.getPublicUrl(path);
 			
 			imageUrl = publicUrlData?.publicUrl;
+			console.log('📸 Profiles bucket public URL:', imageUrl);
 		} catch (urlError) {
-			console.warn('Could not get public URL from profiles bucket:', urlError);
+			console.warn('📸 Could not get public URL from profiles bucket:', urlError);
 		}
 		
 		// If profiles bucket URL doesn't work, try certificates bucket
 		if (!imageUrl) {
 			sourceBucket = 'certificates';
 			try {
+				console.log('📸 Getting public URL from certificates bucket...');
 				const { data: publicUrlData } = await supabaseAdmin.storage
 					.from('certificates')
 					.getPublicUrl(path);
 				
 				imageUrl = publicUrlData?.publicUrl;
+				console.log('📸 Certificates bucket public URL:', imageUrl);
 			} catch (urlError) {
-				console.warn('Could not get public URL from certificates bucket:', urlError);
+				console.warn('📸 Could not get public URL from certificates bucket:', urlError);
 			}
 		}
 
 		// If public URL doesn't work from either bucket, create a long-lived signed URL (1 year)
 		if (!imageUrl) {
-			console.log(`Creating signed URL from ${sourceBucket} bucket...`);
+			console.log(`📸 Creating signed URL from ${sourceBucket} bucket...`);
 			const { data: signedData, error: signedError } = await supabaseAdmin.storage
 				.from(sourceBucket)
 				.createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
 			
 			if (signedError) throw new Error(signedError.message);
 			imageUrl = signedData?.signedUrl;
+			console.log('📸 Signed URL created:', imageUrl);
 		}
+
+		console.log('✅ Upload completed successfully');
+		console.log('📸 Final image URL:', imageUrl);
+		console.log('📸 Final path:', path);
 
 		res.json({ 
 			url: imageUrl,
 			path 
 		});
 	} catch (err) {
-		console.error('Profile image upload error:', err);
-		console.error('Error details:', {
+		console.error('❌ Profile image upload error:', err);
+		console.error('❌ Error details:', {
 			message: err.message,
 			stack: err.stack,
 			userId: req.body?.userId,
