@@ -815,6 +815,12 @@ export default function Login() {
 			}
 			
 			// Use the auth signup endpoint which creates user in users table
+			console.log('🚀 Starting teacher auth signup with:', {
+				email,
+				name,
+				role: 'teacher'
+			});
+			
 			const { data, error } = await apiRequest('/api/auth/signup-email', {
 				method: 'POST',
 				body: JSON.stringify({
@@ -825,9 +831,17 @@ export default function Login() {
 				})
 			});
 			
-			if (error) throw error;
+			if (error) {
+				console.error('❌ Auth signup failed:', error);
+				throw error;
+			}
 			
 			console.log('✅ Teacher auth account created:', data);
+			
+			if (!data) {
+				console.error('❌ No data received from auth endpoint');
+				throw new Error('No response data from auth signup');
+			}
 			
 			// Now create teacher profile using the userId from auth response
 			// The auth endpoint returns { user: { id, email }, isExistingUser, message }
