@@ -573,6 +573,7 @@ export default function Login() {
 
 			// Verify role was set correctly before redirecting
 			let finalRole = selectedRole;
+			console.log('🔍 Starting role verification:', { selectedRole, userId });
 			try {
 				// Wait a moment for database to update
 				await new Promise(resolve => setTimeout(resolve, 500));
@@ -582,6 +583,8 @@ export default function Login() {
 					.select('role')
 					.eq('id', userId)
 					.single();
+				
+				console.log('🔍 Database role verification:', { userVerify, verifyError });
 				
 				if (!verifyError && userVerify?.role) {
 					finalRole = userVerify.role;
@@ -609,6 +612,8 @@ export default function Login() {
 				console.warn('Could not verify role:', verifyErr);
 			}
 			
+			console.log('🔍 Final role determined:', { finalRole, selectedRole });
+			
 			// Convert role to URL format (underscore to hyphen for URLs)
 			const roleToUrl = (r) => {
 				if (!r) return r;
@@ -629,6 +634,14 @@ export default function Login() {
 				
 				// Check if user needs approval (only teachers, doctors, students, labs, and admins need approval)
 				const needsApproval = ['teacher', 'admin', 'doctor', 'student', 'lab'].includes(finalRole);
+				console.log('🔍 Registration flow check:', {
+					finalRole,
+					selectedRole,
+					needsApproval,
+					dashboardPath,
+					isNewUser
+				});
+				
 				if (needsApproval) {
 					setSuccess(`Account created successfully! Your registration is pending admin approval. Redirecting to approval page...`);
 					setTimeout(() => navigate('/pending-approval'), 2000);

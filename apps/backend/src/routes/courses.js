@@ -137,8 +137,7 @@ router.get('/:courseId/materials', async (req, res) => {
 			.from('course_materials')
 			.select('*')
 			.eq('course_id', courseId)
-			.order('display_order', { ascending: true })
-			.order('created_at', { ascending: false });
+			.order('display_order', { ascending: true });
 		
 		if (error) return res.status(400).json({ error: error.message });
 		res.json({ materials: data || [] });
@@ -226,8 +225,7 @@ router.get('/:courseId/assignments', async (req, res) => {
 		const { data, error } = await supabaseAdmin
 			.from('course_assignments')
 			.select('*')
-			.eq('course_id', courseId)
-			.order('created_at', { ascending: false });
+			.eq('course_id', courseId);
 		
 		if (error) return res.status(400).json({ error: error.message });
 		res.json({ assignments: data || [] });
