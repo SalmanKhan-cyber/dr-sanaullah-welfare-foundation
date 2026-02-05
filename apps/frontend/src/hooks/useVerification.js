@@ -62,14 +62,18 @@ export function useVerification(role = null) {
 						
 						// Check if user has multiple roles/profiles that might allow access to this dashboard
 						try {
+							console.log('🔍 Checking user roles for access to:', normalizedExpectedRole);
 							const rolesRes = await apiRequest('/api/auth/user-roles');
 							const userRoles = rolesRes.roles || [];
 							const availableRoles = userRoles.map(r => normalizeRole(r.role));
 							
-							// If user has the expected role in their available roles, allow access
+							console.log('🔍 Available user roles:', availableRoles);
+							console.log('🔍 Looking for role:', normalizedExpectedRole);
+							
+							// If user has expected role in their available roles, allow access
 							if (availableRoles.includes(normalizedExpectedRole)) {
 								console.log(`✅ User has ${expectedRole} role available, switching role to allow access.`);
-								// Update the role for this session
+								// Update role for this session
 								try {
 									await apiRequest('/api/auth/set-role', {
 										method: 'POST',
@@ -83,7 +87,7 @@ export function useVerification(role = null) {
 									const updatedUserRes = await apiRequest('/api/users/me');
 									if (updatedUserRes.user) {
 										setUserInfo(updatedUserRes.user);
-										// Continue with verification using the new role
+										// Continue with verification using new role
 										const newUserRole = updatedUserRes.user.role;
 										const newIsVerified = updatedUserRes.user.verified;
 										
