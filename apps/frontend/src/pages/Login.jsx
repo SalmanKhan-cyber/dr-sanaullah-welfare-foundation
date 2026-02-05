@@ -357,34 +357,15 @@ export default function Login() {
 				
 				// Handle specific error cases
 				if (errorText.includes('already registered') || errorText.includes('already exists') || errorText.includes('User already registered') || errorText.includes('Email already registered')) {
-					// User already exists - the backend now handles this and creates additional profile
-					// Try to sign in to get the user ID
-					console.warn('⚠️ User already registered, backend should handle multi-role profile creation...');
-					
-					try {
-						const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-							email: emailForSignup,
-							password
-						});
-						
-						if (signInError) {
-							if (signInError.message?.includes('Invalid login credentials') || signInError.message?.includes('Invalid password')) {
-								throw new Error('An account with this email already exists, but the password is incorrect. Please use the correct password or reset it.');
-							} else if (signInError.message?.includes('Email not confirmed')) {
-								throw new Error('An account with this email exists but is not verified. Please check your email for verification link or contact support.');
-							}
-							throw new Error('Account exists but sign-in failed: ' + signInError.message);
-						}
-						
-						userId = signInData.user.id;
-						console.log('✅ Using existing user for additional role profile:', userId);
-						isNewUser = false; // This is an additional profile, not a new user
-						
-						// Note: Backend already created the profile, we just need to create role-specific profile data
-						// Don't change the primary role in users table - allow multiple roles
-					} catch (signInErr) {
-						throw new Error(signInErr.message || 'Failed to sign in with existing account.');
+					// User already exists - show appropriate message based on role
+					if (['teacher', 'admin', 'doctor', 'student', 'lab'].includes(selectedRole)) {
+						setSuccess(`${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)} registration successful! Your account is pending admin approval. Please check your email to verify your account.`);
+						setTimeout(() => navigate('/pending-approval'), 2000);
+					} else {
+						setSuccess(`${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)} registration successful! Redirecting to ${selectedRole} dashboard...`);
+						setTimeout(() => navigate(`/dashboard/${dashboardPath}`), 2000);
 					}
+					return; // Stop execution - don't proceed with auto-login
 				} else if (errorText.includes('email') || errorText.includes('Email')) {
 					throw new Error(`Invalid email address: "${emailForSignup}". Please check your email format and try again.`);
 				} else if (errorText.includes('password') || errorText.includes('Password')) {
@@ -637,7 +618,7 @@ export default function Login() {
 			const dashboardPath = roleToUrl(finalRole);
 			
 			if (isNewUser) {
-				// Check if user needs approval (teachers, doctors, students, labs, and admins need approval)
+				// Check if user needs approval (only teachers, doctors, students, labs, and admins need approval)
 				const needsApproval = ['teacher', 'admin', 'doctor', 'student', 'lab'].includes(finalRole);
 				if (needsApproval) {
 					setSuccess(`Account created successfully! Your registration is pending admin approval. Redirecting to approval page...`);
