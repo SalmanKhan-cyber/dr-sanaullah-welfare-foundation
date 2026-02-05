@@ -443,7 +443,7 @@ export default function Login() {
 			
 			if (selectedRole === 'doctor' && Object.keys(profileData).length > 0) {
 				try {
-					// Upload image if provided - MANDATORY for doctors
+					// Upload image if provided
 					let imageUrl = null;
 					if (profileData.profileImage) {
 						setUploadingImage(true);
@@ -466,33 +466,15 @@ export default function Login() {
 							
 							console.log('✅ Image upload successful:', uploadRes);
 							imageUrl = uploadRes.url;
-							
-							// Verify we got a valid URL
-							if (!imageUrl) {
-								throw new Error('Upload succeeded but no URL returned');
-							}
 						} catch (uploadErr) {
 							console.error('❌ Image upload failed:', uploadErr);
-							setUploadingImage(false);
-							
-							// Check if it's the RLS error we know about
-							if (uploadErr.message && uploadErr.message.includes('row-level security policy')) {
-								// This is a known issue - backend is still deploying
-								alert('⚠️ Photo upload temporarily unavailable due to backend deployment. Your profile has been created successfully. You can upload your photo later from the doctor dashboard.');
-								// Continue with registration - don't throw error
-							} else {
-								// Show user-friendly error message for other errors
-								alert(`❌ Photo upload failed: ${uploadErr.message || 'Unknown error'}. Please try uploading the photo again or contact support.`);
-								// Don't continue - stop the registration process
-								throw new Error(`Photo upload failed: ${uploadErr.message}`);
-							}
+							console.warn('Image upload failed, backend will assign random avatar:', uploadErr);
+							// Continue - backend will assign random avatar
 						} finally {
 							setUploadingImage(false);
 						}
 					} else {
 						console.log('📸 No profile image provided, backend will assign random avatar');
-						// For doctors, we should require an image - show warning
-						alert('⚠️ Warning: No profile photo provided. A random avatar will be assigned. For better professional appearance, please upload a photo.');
 					}
 					
 					// Remove profileImage from profileData before sending
@@ -736,6 +718,53 @@ export default function Login() {
 			timing,
 			profileImage: profileImage // Pass the file, will upload after user creation
 		});
+	}
+
+	async function handleLabRegistration(e) {
+		e.preventDefault();
+		
+		// Validation
+		if (!name || !email || !password) {
+			setError('Please fill all required fields');
+			return;
+		}
+		
+		setLoading(true);
+		setError('');
+		
+		try {
+			// Create user account first
+			const { data, error } = await supabase.auth.signUp({
+				email,
+				password,
+				options: {
+					data: {
+						name,
+						role: 'lab'
+					}
+				}
+			});
+			
+			if (error) throw error;
+			
+			// Create lab profile
+			const userId = data.user.id;
+			await apiRequest('/api/labs/profile', {
+				method: 'POST',
+				body: JSON.stringify({
+					userId,
+					name,
+					...profileData
+				})
+			});
+			
+			setSuccess('Lab registration successful! Please check your email to verify your account.');
+			setStep(1); // Back to login
+		} catch (err) {
+			setError(err.message || 'Lab registration failed');
+		} finally {
+			setLoading(false);
+		}
 	}
 
 
