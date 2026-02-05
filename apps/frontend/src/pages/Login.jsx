@@ -733,25 +733,31 @@ export default function Login() {
 		setError('');
 		
 		try {
-			// Use the auth signup endpoint which creates user in users table
-			console.log('🚀 Starting lab auth signup with:', {
+			// Use the lab register endpoint which handles everything
+			console.log('🚀 Starting lab registration with:', {
 				email,
 				name,
-				role: 'lab'
+				labName: labName || name,
+				labLocation,
+				labContactInfo,
+				labServices
 			});
 			
 			console.log('🔍 API URL being used:', import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app'));
 			
-			const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/auth/signup-email`, {
+			const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/labs/register`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify({
+					lab_name: labName || name,
+					location: labLocation || null,
+					contact_info: labContactInfo || null,
+					services: labServices || null,
+					user_name: name,
 					email,
-					password,
-					role: 'lab',
-					name
+					password
 				})
 			});
 			
@@ -760,53 +766,12 @@ export default function Login() {
 			
 			if (!response.ok) {
 				const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
-				console.error('❌ Raw response error:', errorData);
+				console.error('❌ Lab registration failed:', errorData);
 				throw new Error(errorData.error || response.statusText);
 			}
 			
 			const data = await response.json();
-			console.log('🔍 Raw response data:', data);
-			
-			if (!data) {
-				console.error('❌ No data received from auth endpoint');
-				throw new Error('No response data from auth signup');
-			}
-			
-			// The auth endpoint returns { user: { id, email }, isExistingUser, message }
-			const userId = data.user?.id;
-			if (!userId) {
-				console.error('❌ Auth response structure:', data);
-				throw new Error('No userId received from auth signup');
-			}
-			
-			// Create lab profile using the lab-specific fields
-			console.log('🚀 Creating lab profile with userId:', userId);
-			
-			const profileResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/labs/profile`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					userId,
-					name: labName || name,
-					location: labLocation || null,
-					contact_info: labContactInfo || null,
-					services: labServices || null
-				})
-			});
-			
-			console.log('🔍 Profile response status:', profileResponse.status);
-			console.log('🔍 Profile response ok:', profileResponse.ok);
-			
-			if (!profileResponse.ok) {
-				const profileError = await profileResponse.json().catch(() => ({ error: 'Profile creation failed' }));
-				console.error('❌ Lab profile creation failed:', profileError);
-				throw new Error(profileError.error || profileResponse.statusText);
-			}
-			
-			const profileData = await profileResponse.json();
-			console.log('✅ Lab profile created:', profileData);
+			console.log('✅ Lab registration successful:', data);
 			
 			setSuccess('Lab registration successful! Please check your email to verify your account.');
 			setStep(1); // Back to login
