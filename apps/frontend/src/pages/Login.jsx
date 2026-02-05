@@ -459,12 +459,10 @@ export default function Login() {
 							formData.append('image', profileData.profileImage);
 							formData.append('userId', userId);
 							
-							console.log('📤 Sending FormData to upload endpoint:', {
-								endpoint: `${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/upload/profile-image`,
-								hasImage: !!profileData.profileImage,
-								imageName: profileData.profileImage.name,
-								imageSize: profileData.profileImage.size
-							});
+							console.log('🔍 FormData contents:');
+							for (let [key, value] of formData.entries()) {
+								console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes, ${value.type})` : value);
+							}
 							
 							const uploadRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/upload/profile-image`, {
 								method: 'POST',
@@ -473,6 +471,7 @@ export default function Login() {
 							
 							console.log('🔍 Upload response status:', uploadRes.status);
 							console.log('🔍 Upload response ok:', uploadRes.ok);
+							console.log('🔍 Upload response headers:', Object.fromEntries(uploadRes.headers.entries()));
 							
 							if (!uploadRes.ok) {
 								const uploadError = await uploadRes.json().catch(() => ({ error: 'Upload failed' }));
@@ -485,6 +484,10 @@ export default function Login() {
 								imageUrl = uploadData.url;
 								console.log('✅ Image URL set to:', imageUrl);
 							}
+						} catch (uploadErr) {
+							console.error('❌ Doctor image upload exception:', uploadErr);
+							console.warn('Image upload failed, backend will assign random avatar:', uploadErr);
+							// Continue - backend will assign random avatar
 						} finally {
 							setUploadingImage(false);
 						}
@@ -506,7 +509,7 @@ export default function Login() {
 							consultation_fee: fee, // Send exact value as entered
 							discount_rate: discount,
 							timing,
-							image_url: imageUrl // Pass the uploaded image URL
+							image_url: imageUrl // Use uploaded image URL
 						})
 					});
 					
@@ -843,12 +846,10 @@ export default function Login() {
 					formData.append('image', profileImage);
 					formData.append('userId', 'teacher-' + Date.now());
 					
-					console.log('📤 Sending FormData to upload endpoint:', {
-						endpoint: `${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/upload/profile-image`,
-						hasImage: !!profileImage,
-						imageName: profileImage.name,
-						imageSize: profileImage.size
-					});
+					console.log('🔍 FormData contents:');
+					for (let [key, value] of formData.entries()) {
+						console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes, ${value.type})` : value);
+					}
 					
 					const uploadRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/upload/profile-image`, {
 						method: 'POST',
@@ -857,6 +858,7 @@ export default function Login() {
 					
 					console.log('🔍 Upload response status:', uploadRes.status);
 					console.log('🔍 Upload response ok:', uploadRes.ok);
+					console.log('🔍 Upload response headers:', Object.fromEntries(uploadRes.headers.entries()));
 					
 					if (!uploadRes.ok) {
 						const uploadError = await uploadRes.json().catch(() => ({ error: 'Upload failed' }));
@@ -869,6 +871,10 @@ export default function Login() {
 						imageUrl = uploadData.url;
 						console.log('✅ Image URL set to:', imageUrl);
 					}
+				} catch (uploadErr) {
+					console.error('❌ Teacher image upload exception:', uploadErr);
+					console.warn('Image upload failed, backend will assign random avatar:', uploadErr);
+					// Continue - backend will assign random avatar
 				} finally {
 					setUploadingImage(false);
 				}
