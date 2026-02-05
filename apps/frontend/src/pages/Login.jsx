@@ -442,57 +442,8 @@ export default function Login() {
 			
 			if (selectedRole === 'doctor' && Object.keys(profileData).length > 0) {
 				try {
-					// Upload image if provided
-					let imageUrl = null;
-					if (profileData.profileImage) {
-						setUploadingImage(true);
-						try {
-							console.log('📸 Starting image upload for doctor registration:', {
-								fileName: profileData.profileImage.name,
-								fileSize: profileData.profileImage.size,
-								fileType: profileData.profileImage.type,
-								userId: userId
-							});
-							
-							const formData = new FormData();
-							formData.append('image', profileData.profileImage);
-							formData.append('userId', userId);
-							
-							console.log('🔍 FormData contents:');
-							for (let [key, value] of formData.entries()) {
-								console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes, ${value.type})` : value);
-							}
-							
-							const uploadRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/upload/profile-image`, {
-								method: 'POST',
-								body: formData
-							});
-							
-							console.log('🔍 Upload response status:', uploadRes.status);
-							console.log('🔍 Upload response ok:', uploadRes.ok);
-							console.log('🔍 Upload response headers:', Object.fromEntries(uploadRes.headers.entries()));
-							
-							if (!uploadRes.ok) {
-								const uploadError = await uploadRes.json().catch(() => ({ error: 'Upload failed' }));
-								console.error('❌ Doctor image upload failed:', uploadError);
-								console.warn('Image upload failed, backend will assign random avatar:', uploadError);
-								// Continue - backend will assign random avatar
-							} else {
-								const uploadData = await uploadRes.json();
-								console.log('✅ Doctor image upload successful:', uploadData);
-								imageUrl = uploadData.url;
-								console.log('✅ Image URL set to:', imageUrl);
-							}
-						} catch (uploadErr) {
-							console.error('❌ Doctor image upload exception:', uploadErr);
-							console.warn('Image upload failed, backend will assign random avatar:', uploadErr);
-							imageUrl = null; // CRITICAL: Ensure null if upload fails
-						} finally {
-							setUploadingImage(false);
-						}
-					} else {
-						console.log('📸 No doctor profile image provided, backend will assign random avatar');
-					}
+					// SIMPLIFIED: No image upload - backend will assign random avatar
+					const imageUrl = null;
 					
 					// Remove profileImage from profileData before sending
 					const { profileImage, ...doctorData } = profileData;
@@ -503,11 +454,10 @@ export default function Login() {
 						consultation_fee: fee, // Send exact value as entered
 						discount_rate: discount,
 						timing,
-						image_url: imageUrl // Use uploaded image URL
+						image_url: imageUrl // Backend will assign random avatar
 					};
 					
-					console.log('🔥 Doctor profile payload:', doctorPayload);
-					console.log('🔥 Sending to:', `${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/doctors/profile`);
+					console.log('🔥 Doctor profile payload (simplified):', doctorPayload);
 					
 					const doctorResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/doctors/profile`, {
 						method: 'POST',
@@ -651,30 +601,10 @@ export default function Login() {
 				});
 				
 				if (needsApproval) {
-					console.log('🔥 REGISTRATION APPROVAL FLOW STARTED');
-					console.log('🔥 needsApproval:', needsApproval);
-					console.log('🔥 finalRole:', finalRole);
-					console.log('🔥 About to set success message...');
-					setSuccess(`Account created successfully! Your registration is pending admin approval. Redirecting to approval page...`);
-					console.log('🔥 Success message set, waiting 3 seconds before redirect...');
-					
-					// CRITICAL: Force sign out to prevent any automatic login
-					try {
-						await supabase.auth.signOut();
-						console.log('🔥 Force signed out user after registration');
-					} catch (signOutErr) {
-						console.warn('⚠️ Could not sign out:', signOutErr);
-					}
-					
-					// CRITICAL: Clear any existing session data
-					localStorage.clear();
-					sessionStorage.clear();
-					
-					setTimeout(() => {
-						console.log('🔥 About to redirect to approval page...');
-						navigate('/pending-approval');
-					}, 3000); // Increased delay to ensure message is seen
-					return; // CRITICAL: Stop all execution - no dashboard access
+					setSuccess(`Account created successfully! Your registration is pending admin approval. Please check your email and wait for admin approval before logging in.`);
+					// CRITICAL: No automatic redirect - user must log in manually after approval
+					setStep(1); // Go back to login
+					return; // STOP - no dashboard access, no redirect
 				} else {
 					setSuccess(`Account created successfully! Redirecting to ${finalRole} dashboard...`);
 					setTimeout(() => navigate(`/dashboard/${dashboardPath}`), 2000);
@@ -684,13 +614,10 @@ export default function Login() {
 				// Check if this role needs approval before allowing dashboard access
 				const needsApprovalForExisting = ['teacher', 'admin', 'doctor', 'student', 'lab'].includes(finalRole);
 				if (needsApprovalForExisting) {
-					setSuccess(`Additional ${finalRole} profile created! Your account is pending admin approval. Redirecting to approval page...`);
-					console.log('✅ Approval message set for existing user, waiting 3 seconds before redirect...');
-					setTimeout(() => {
-						console.log('✅ Redirecting to approval page now...');
-						navigate('/pending-approval');
-					}, 3000); // Increased delay to ensure message is seen
-					return; // CRITICAL: Stop execution - no dashboard access
+					setSuccess(`Additional ${finalRole} profile created! Your account is pending admin approval. Please check your email and wait for admin approval before logging in.`);
+					// CRITICAL: No automatic redirect - user must log in manually after approval
+					setStep(1); // Go back to login
+					return; // STOP - no dashboard access, no redirect
 				}
 				setTimeout(() => navigate(`/dashboard/${dashboardPath}`), 2000);
 			}
@@ -896,57 +823,8 @@ export default function Login() {
 		setError('');
 		
 		try {
-			// Upload image if provided
+			// SIMPLIFIED: No image upload - backend will assign random avatar
 			let imageUrl = null;
-			if (profileImage) {
-				setUploadingImage(true);
-				try {
-					console.log('📸 Starting image upload for teacher registration:', {
-						fileName: profileImage.name,
-						fileSize: profileImage.size,
-						fileType: profileImage.type,
-						userId: 'teacher-' + Date.now()
-					});
-					
-					const formData = new FormData();
-					formData.append('image', profileImage);
-					formData.append('userId', 'teacher-' + Date.now());
-					
-					console.log('🔍 FormData contents:');
-					for (let [key, value] of formData.entries()) {
-						console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes, ${value.type})` : value);
-					}
-					
-					const uploadRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/upload/profile-image`, {
-						method: 'POST',
-						body: formData
-					});
-					
-					console.log('🔍 Upload response status:', uploadRes.status);
-					console.log('🔍 Upload response ok:', uploadRes.ok);
-					console.log('🔍 Upload response headers:', Object.fromEntries(uploadRes.headers.entries()));
-					
-					if (!uploadRes.ok) {
-						const uploadError = await uploadRes.json().catch(() => ({ error: 'Upload failed' }));
-						console.error('❌ Teacher image upload failed:', uploadError);
-						console.warn('Image upload failed, backend will assign random avatar:', uploadError);
-						// Continue - backend will assign random avatar
-					} else {
-						const uploadData = await uploadRes.json();
-						console.log('✅ Teacher image upload successful:', uploadData);
-						imageUrl = uploadData.url;
-						console.log('✅ Image URL set to:', imageUrl);
-					}
-				} catch (uploadErr) {
-					console.error('❌ Teacher image upload exception:', uploadErr);
-					console.warn('Image upload failed, backend will assign random avatar:', uploadErr);
-					imageUrl = null; // CRITICAL: Ensure null if upload fails
-				} finally {
-					setUploadingImage(false);
-				}
-			} else {
-				console.log('📸 No teacher profile image provided, backend will assign random avatar');
-			}
 			
 			// Use the auth signup endpoint which creates user in users table
 			console.log('🚀 Starting teacher auth signup with:', {
