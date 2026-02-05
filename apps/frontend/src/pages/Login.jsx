@@ -618,6 +618,15 @@ export default function Login() {
 			const dashboardPath = roleToUrl(finalRole);
 			
 			if (isNewUser) {
+				// CRITICAL: Sign out user immediately after registration to prevent automatic login
+				// Users should log in manually after admin approval
+				try {
+					await supabase.auth.signOut();
+					console.log('✅ User signed out after registration (frontend security measure)');
+				} catch (signOutErr) {
+					console.warn('⚠️ Could not sign out user after registration:', signOutErr);
+				}
+				
 				// Check if user needs approval (only teachers, doctors, students, labs, and admins need approval)
 				const needsApproval = ['teacher', 'admin', 'doctor', 'student', 'lab'].includes(finalRole);
 				if (needsApproval) {

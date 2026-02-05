@@ -26,6 +26,16 @@ router.post('/signup-email', async (req, res) => {
 		// Just verify password exists, but don't create session
 		// Users should log in manually after registration
 		console.log(`✅ Using existing user account: ${userId} for new ${role} profile`);
+		
+		// CRITICAL: Sign out any existing sessions to prevent automatic login
+		// Users should log in manually after admin approval
+		try {
+			await supabaseAdmin.auth.admin.signOut(userId);
+			console.log(`✅ User ${userId} signed out after role addition (security measure)`);
+		} catch (signOutErr) {
+			console.warn(`⚠️ Could not sign out user ${userId} after role addition:`, signOutErr);
+			// Continue anyway - this is a security measure but shouldn't block registration
+		}
 	} else {
 		// New user - create auth account
 		const { data, error } = await supabaseAdmin.auth.signUp({
@@ -39,6 +49,16 @@ router.post('/signup-email', async (req, res) => {
 		
 		userId = data.user.id;
 		console.log(`✅ Created new user account: ${userId}`);
+		
+		// CRITICAL: Sign out the user immediately after registration to prevent automatic login
+		// Users should log in manually after admin approval
+		try {
+			await supabaseAdmin.auth.admin.signOut(userId);
+			console.log(`✅ User ${userId} signed out after registration (security measure)`);
+		} catch (signOutErr) {
+			console.warn(`⚠️ Could not sign out user ${userId} after registration:`, signOutErr);
+			// Continue anyway - this is a security measure but shouldn't block registration
+		}
 	}
 	
 	// Check if user already has this role profile
