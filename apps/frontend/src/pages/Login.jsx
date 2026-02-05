@@ -644,7 +644,11 @@ export default function Login() {
 				
 				if (needsApproval) {
 					setSuccess(`Account created successfully! Your registration is pending admin approval. Redirecting to approval page...`);
-					setTimeout(() => navigate('/pending-approval'), 2000);
+					console.log('✅ Approval message set, waiting 3 seconds before redirect...');
+					setTimeout(() => {
+						console.log('✅ Redirecting to approval page now...');
+						navigate('/pending-approval');
+					}, 3000); // Increased delay to ensure message is seen
 					return; // CRITICAL: Stop all execution - no dashboard access
 				} else {
 					setSuccess(`Account created successfully! Redirecting to ${finalRole} dashboard...`);
@@ -656,7 +660,11 @@ export default function Login() {
 				const needsApprovalForExisting = ['teacher', 'admin', 'doctor', 'student', 'lab'].includes(finalRole);
 				if (needsApprovalForExisting) {
 					setSuccess(`Additional ${finalRole} profile created! Your account is pending admin approval. Redirecting to approval page...`);
-					setTimeout(() => navigate('/pending-approval'), 2000);
+					console.log('✅ Approval message set for existing user, waiting 3 seconds before redirect...');
+					setTimeout(() => {
+						console.log('✅ Redirecting to approval page now...');
+						navigate('/pending-approval');
+					}, 3000); // Increased delay to ensure message is seen
 					return; // CRITICAL: Stop execution - no dashboard access
 				}
 				setTimeout(() => navigate(`/dashboard/${dashboardPath}`), 2000);
