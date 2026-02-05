@@ -48,12 +48,25 @@ export default function DashboardAdmin() {
 		department: '',
 		description: '',
 		requirements: '',
-		location: '',
+		salary: '',
 		employment_type: 'full-time',
-		salary_range: '',
-		experience_required: '',
-		education_required: '',
-		is_active: true
+		location: '',
+		deadline: ''
+	});
+	const [students, setStudents] = useState([]);
+	const [editingStudent, setEditingStudent] = useState(null);
+	const [showAddStudent, setShowAddStudent] = useState(false);
+	const [showEditStudent, setShowEditStudent] = useState(false);
+	const [studentForm, setStudentForm] = useState({
+		name: '',
+		email: '',
+		phone: '',
+		course_id: '',
+		roll_number: '',
+		grade: '',
+		section: '',
+		admission_date: '',
+		status: 'active'
 	});
 	const [stats, setStats] = useState({ totalUsers: 0, totalDonations: 0, totalAmount: 0, totalDoctors: 0, totalPatients: 0, totalLabs: 0, totalDonors: 0 });
 	const [loading, setLoading] = useState(false);
@@ -270,6 +283,37 @@ export default function DashboardAdmin() {
 			// Set defaults to prevent crash
 			setUserRole('patient');
 			setRoleWarning(true);
+		}
+	}
+
+	// Student management functions
+	async function handleDeleteStudent(studentId) {
+		try {
+			const res = await apiRequest('/api/students/delete', {
+				method: 'DELETE',
+				body: JSON.stringify({ id: studentId })
+			});
+			
+			if (res.error) {
+				throw new Error(res.error);
+			}
+			
+			// Refresh students list
+			await loadStudents();
+			alert('Student deleted successfully');
+		} catch (err) {
+			console.error('Error deleting student:', err);
+			alert('Failed to delete student: ' + err.message);
+		}
+	}
+
+	async function loadStudents() {
+		try {
+			const res = await apiRequest('/api/students');
+			setStudents(res.students || []);
+		} catch (err) {
+			console.error('Error loading students:', err);
+			setStudents([]);
 		}
 	}
 
@@ -578,6 +622,9 @@ export default function DashboardAdmin() {
 					alert('Failed to load courses: ' + err.message);
 					setCourses([]);
 				}
+			} else if (activeTab === 'students') {
+				// Load students using API endpoint
+				await loadStudents();
 			} else if (activeTab === 'pharmacy') {
 				// Use optimized API endpoint with shorter timeout and cache
 				try {
@@ -2488,7 +2535,7 @@ export default function DashboardAdmin() {
 				<div className="bg-white rounded-2xl shadow-xl mb-6">
 					<div className="border-b border-gray-200">
 						<nav className="flex space-x-8 px-6 overflow-x-auto" aria-label="Tabs">
-							{['overview', 'patients', 'donations', 'doctors', 'teachers', 'courses', 'pharmacy', 'labs', 'lab-reports', 'blood-bank', 'specialties', 'conditions', 'surgery-categories', 'surgery-bookings', 'home-services', 'jobs'].map(tab => (
+							{['overview', 'patients', 'donations', 'doctors', 'teachers', 'students', 'courses', 'pharmacy', 'labs', 'lab-reports', 'blood-bank', 'specialties', 'conditions', 'surgery-categories', 'surgery-bookings', 'home-services', 'jobs'].map(tab => (
 								<button
 									key={tab}
 									onClick={() => setActiveTab(tab)}
@@ -2498,7 +2545,7 @@ export default function DashboardAdmin() {
 											: 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
 									}`}
 								>
-									{tab === 'lab-reports' ? 'Lab Reports' : tab === 'blood-bank' ? 'Blood Bank' : tab === 'surgery-categories' ? 'Surgery Categories' : tab === 'surgery-bookings' ? 'Surgery Bookings' : tab === 'home-services' ? 'Home Services' : tab === 'jobs' ? 'Jobs' : tab}
+									{tab === 'lab-reports' ? 'Lab Reports' : tab === 'blood-bank' ? 'Blood Bank' : tab === 'surgery-categories' ? 'Surgery Categories' : tab === 'surgery-bookings' ? 'Surgery Bookings' : tab === 'home-services' ? 'Home Services' : tab === 'jobs' ? 'Jobs' : tab === 'students' ? 'Students' : tab}
 								</button>
 							))}
 						</nav>
@@ -3762,6 +3809,116 @@ export default function DashboardAdmin() {
 						</div>
 					)}
 
+					{activeTab === 'students' && (
+						<div>
+							<div className="flex justify-between items-center mb-4">
+								<h2 className="text-xl font-semibold">Student Management</h2>
+								<button 
+									onClick={() => {
+										setEditingStudent(null);
+										setStudentForm({ 
+											name: '', 
+											email: '', 
+											phone: '', 
+											course_id: '', 
+											roll_number: '', 
+											grade: '', 
+											section: '', 
+											admission_date: '', 
+											status: 'active' 
+										});
+										setShowAddStudent(true);
+									}}
+									className="bg-brand text-white px-4 py-2 rounded hover:bg-brand-dark"
+								>
+									+ Add Student
+								</button>
+							</div>
+							{loading ? (
+								<div className="flex justify-center items-center py-12">
+									<div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand mb-4"></div>
+									<p className="text-gray-600">Loading students...</p>
+								</div>
+							) : students.length === 0 ? (
+								<div className="text-center py-12">
+									<div className="text-6xl mb-4">👨‍🎓</div>
+									<p className="text-gray-600">No students found. Add your first student!</p>
+								</div>
+							) : (
+								<div className="overflow-x-auto">
+									<table className="min-w-full divide-y divide-gray-200">
+										<thead className="bg-gray-50">
+											<tr>
+												<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+												<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+												<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+												<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Course</th>
+												<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Roll Number</th>
+												<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grade</th>
+												<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+												<th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+											</tr>
+										</thead>
+										<tbody className="bg-white divide-y divide-gray-200">
+											{students.map(student => (
+												<tr key={student.id}>
+													<td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{student.name}</td>
+													<td className="px-6 py-4 whitespace-nowrap text-sm">{student.email}</td>
+													<td className="px-6 py-4 whitespace-nowrap text-sm">{student.phone || '-'}</td>
+													<td className="px-6 py-4 whitespace-nowrap text-sm">{student.course_title || '-'}</td>
+													<td className="px-6 py-4 whitespace-nowrap text-sm">{student.roll_number || '-'}</td>
+													<td className="px-6 py-4 whitespace-nowrap text-sm">{student.grade || '-'}</td>
+													<td className="px-6 py-4 whitespace-nowrap text-sm">
+														<span className={`px-2 py-1 text-xs rounded ${
+															student.status === 'active' 
+																? 'bg-green-100 text-green-800' 
+																: student.status === 'inactive' 
+																	? 'bg-red-100 text-red-800' 
+																		: 'bg-gray-100 text-gray-800'
+														}`}>
+															{student.status || 'Unknown'}
+														</span>
+													</td>
+													<td className="px-6 py-4 whitespace-nowrap text-sm">
+														<button 
+															onClick={() => {
+																setEditingStudent(student);
+																setStudentForm({
+																	name: student.name || '',
+																	email: student.email || '',
+																	phone: student.phone || '',
+																	course_id: student.course_id || '',
+																	roll_number: student.roll_number || '',
+																	grade: student.grade || '',
+																	section: student.section || '',
+																	admission_date: student.admission_date || '',
+																	status: student.status || 'active'
+																});
+																setShowEditStudent(true);
+															}}
+															className="text-blue-600 hover:text-blue-800 text-sm font-semibold py-2 border border-blue-600 rounded hover:bg-blue-50"
+														>
+															✏️ Edit
+														</button>
+														<button 
+															onClick={() => {
+																if (confirm(`Are you sure you want to delete student "${student.name}"?`)) {
+																	handleDeleteStudent(student.id);
+																}
+															}}
+															className="text-red-600 hover:text-red-800 text-sm font-semibold py-2 border border-red-600 rounded hover:bg-red-50 ml-2"
+														>
+															🗑️ Delete
+														</button>
+													</td>
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+							)}
+						</div>
+					)}
 
 					{activeTab === 'specialties' && (
 						<div>
