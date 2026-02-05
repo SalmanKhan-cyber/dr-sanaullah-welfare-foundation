@@ -780,8 +780,13 @@ export default function Login() {
 			}
 			
 			// Create lab profile using the lab-specific fields
-			const profileResponse = await apiRequest('/api/labs/profile', {
+			console.log('🚀 Creating lab profile with userId:', userId);
+			
+			const profileResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/labs/profile`, {
 				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
 				body: JSON.stringify({
 					userId,
 					name: labName || name,
@@ -791,12 +796,17 @@ export default function Login() {
 				})
 			});
 			
-			if (profileResponse.error) {
-				console.error('❌ Lab profile creation failed:', profileResponse.error);
-				throw new Error(profileResponse.error);
+			console.log('🔍 Profile response status:', profileResponse.status);
+			console.log('🔍 Profile response ok:', profileResponse.ok);
+			
+			if (!profileResponse.ok) {
+				const profileError = await profileResponse.json().catch(() => ({ error: 'Profile creation failed' }));
+				console.error('❌ Lab profile creation failed:', profileError);
+				throw new Error(profileError.error || profileResponse.statusText);
 			}
 			
-			console.log('✅ Lab profile created:', profileResponse);
+			const profileData = await profileResponse.json();
+			console.log('✅ Lab profile created:', profileData);
 			
 			setSuccess('Lab registration successful! Please check your email to verify your account.');
 			setStep(1); // Back to login
@@ -901,8 +911,13 @@ export default function Login() {
 			}
 			
 			// Create teacher profile using the userId from auth response
-			const profileResponse = await apiRequest('/api/teachers/profile', {
+			console.log('🚀 Creating teacher profile with userId:', userId);
+			
+			const profileResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/teachers/profile`, {
 				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
 				body: JSON.stringify({
 					userId,
 					name,
@@ -911,12 +926,17 @@ export default function Login() {
 				})
 			});
 			
-			if (profileResponse.error) {
-				console.error('❌ Teacher profile creation failed:', profileResponse.error);
-				throw new Error(profileResponse.error);
+			console.log('🔍 Profile response status:', profileResponse.status);
+			console.log('🔍 Profile response ok:', profileResponse.ok);
+			
+			if (!profileResponse.ok) {
+				const profileError = await profileResponse.json().catch(() => ({ error: 'Profile creation failed' }));
+				console.error('❌ Teacher profile creation failed:', profileError);
+				throw new Error(profileError.error || profileResponse.statusText);
 			}
 			
-			console.log('✅ Teacher profile created:', profileResponse);
+			const profileData = await profileResponse.json();
+			console.log('✅ Teacher profile created:', profileData);
 			
 			setSuccess('Teacher registration successful! Your account is pending admin approval. Please check your email to verify your account.');
 			setStep(1); // Back to login
