@@ -86,7 +86,8 @@ router.post('/signup-email', async (req, res) => {
 	
 	// Validate role
 	const validRoles = ['patient', 'doctor', 'donor', 'lab', 'student', 'teacher', 'pharmacy', 'blood_bank', 'admin'];
-	const finalRole = role || existingUserData?.role || 'patient';
+	// CRITICAL FIX: Use the selected role, not existing role for new registrations
+	const finalRole = role; // Always use the newly selected role for registration
 	
 	if (!validRoles.includes(finalRole)) {
 		console.error(`❌ Invalid role: ${finalRole}. Valid roles are: ${validRoles.join(', ')}`);
