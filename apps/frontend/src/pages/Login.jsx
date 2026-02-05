@@ -1032,6 +1032,12 @@ export default function Login() {
 	}
 
 	async function handleRoleChoice(role) {
+		// CRITICAL: Prevent automatic dashboard access during registration
+		if (loading) {
+			console.warn('⚠️ Blocking role choice during registration process');
+			return;
+		}
+		
 		setLoading(true);
 		setError('');
 		try {
