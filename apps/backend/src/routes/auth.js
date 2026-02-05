@@ -98,11 +98,19 @@ router.post('/signup-email', async (req, res) => {
 	
 	console.log(`📝 User registration: userId=${userId}, existingRole=${existingUserData?.role || 'none'}, newRole=${role}, finalRole=${finalRole}, isNewUser=${isNewUser}, isRoleChange=${isRoleChange}, verified=${verifiedStatus}`);
 	
+	console.log('📝 User data to be upserted:', JSON.stringify(userData, null, 2));
+	
 	const { error: upsertError } = await supabaseAdmin.from('users').upsert(userData, { onConflict: 'id' });
 	
 	if (upsertError) {
 		console.error('❌ Error updating user in users table:', upsertError);
 		console.error('❌ User data that failed:', JSON.stringify(userData, null, 2));
+		console.error('❌ Supabase error details:', {
+			message: upsertError.message,
+			details: upsertError.details,
+			hint: upsertError.hint,
+			code: upsertError.code
+		});
 		
 		// Return more detailed error message to help debug
 		const errorMessage = upsertError.message || 'Failed to create user profile';
