@@ -16,7 +16,7 @@ export function useVerification(role = null) {
 	const location = useLocation();
 
 	// Roles that don't need approval
-	const NO_APPROVAL_ROLES = ['student', 'patient'];
+	const NO_APPROVAL_ROLES = ['student', 'patient', 'doctor', 'donor', 'lab', 'pharmacy', 'blood_bank'];
 
 	useEffect(() => {
 		checkVerification();

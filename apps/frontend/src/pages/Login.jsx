@@ -582,8 +582,8 @@ export default function Login() {
 			const dashboardPath = roleToUrl(finalRole);
 			
 			if (isNewUser) {
-				// Check if user needs approval (students and patients don't need approval)
-				const needsApproval = finalRole !== 'student' && finalRole !== 'patient';
+				// Check if user needs approval (only teachers and admins need approval)
+				const needsApproval = finalRole === 'teacher' || finalRole === 'admin';
 				if (needsApproval) {
 					setSuccess(`Account created successfully! Your registration is pending admin approval. Redirecting to approval page...`);
 					setTimeout(() => navigate('/pending-approval'), 2000);
