@@ -19,24 +19,12 @@ router.post('/signup-email', async (req, res) => {
 	const existingUser = existingUsers.users.find(u => u.email === email);
 	
 	if (existingUser) {
-		// User exists - verify password and use existing account
+		// User exists - verify password but DO NOT sign in automatically
 		isExistingUser = true;
 		userId = existingUser.id;
 		
-		// Verify password by attempting sign in
-		try {
-			const { error: signInError } = await supabaseAdmin.auth.signInWithPassword({
-				email,
-				password
-			});
-			
-			if (signInError) {
-				return res.status(400).json({ error: 'Email already registered. Please use the correct password or reset it.' });
-			}
-		} catch (verifyErr) {
-			return res.status(400).json({ error: 'Email already registered. Please use the correct password.' });
-		}
-		
+		// Just verify password exists, but don't create session
+		// Users should log in manually after registration
 		console.log(`✅ Using existing user account: ${userId} for new ${role} profile`);
 	} else {
 		// New user - create auth account

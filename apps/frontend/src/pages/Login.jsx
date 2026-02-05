@@ -437,8 +437,7 @@ export default function Login() {
 				}
 			}
 			
-			// DISABLED: Use handleDoctorProfileCompletion function instead
-			// if (selectedRole === 'doctor' && Object.keys(profileData).length > 0) {
+			if (selectedRole === 'doctor' && Object.keys(profileData).length > 0) {
 				try {
 					// Upload image if provided
 					let imageUrl = null;

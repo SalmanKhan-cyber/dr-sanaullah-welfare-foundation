@@ -141,7 +141,7 @@ export function generateAppointmentSheetHTML(appointmentData) {
                 <div class="header-content">
                     <div class="logo-section">
                         <div class="logo">
-                            <img src="./logo1.jpeg" alt="Dr. Sanaullah Welfare Foundation Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <img src="/logo1.jpeg" alt="Dr. Sanaullah Welfare Foundation Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
                             <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; font-size:24px; color:#1e40af; font-weight:bold;">🏥</div>
                         </div>
                         <div>
@@ -232,8 +232,8 @@ export function generateAppointmentSheetHTML(appointmentData) {
             
             <div class="footer">
                 <strong>Dr. Sanaullah Welfare Foundation</strong> | 
-                📍 Main Hospital Address, Karachi, Pakistan | 
-                📞 Emergency: 021-1234567 | 
+                📍 Main Hospital Address | 
+                📞 Emergency: 123-456-7890 | 
                 🌐 www.drsanaullahwelfarefoundation.com | 
                 Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
             </div>

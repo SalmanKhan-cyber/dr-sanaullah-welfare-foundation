@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Guest Appointments Health</title>
+</head>
+<body>
+    <h1>Test Guest Appointments Health</h1>
+    
+    <button onclick="testHealth()">Test Health Endpoint</button>
+    <div id="results"></div>
+    
+    <script>
+        async function testHealth() {
+            try {
+                const response = await fetch('https://api.drsanaullahwelfarefoundation.com/api/appointments/guest/health');
+                const data = await response.json();
+                document.getElementById('results').innerHTML = '<h3>Health Test Result:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('results').innerHTML = '<h3>Health Test Error:</h3><pre>' + error.message + '</pre>';
+            }
+        }
+    </script>
+</body>
+</html>

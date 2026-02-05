@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Teacher Registration</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .logs { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 3px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Teacher Registration</h1>
+    
+    <div class="form-group">
+        <label>Email:</label>
+        <input type="email" id="email" value="test@example.com" required>
+    </div>
+    
+    <div class="form-group">
+        <label>Password:</label>
+        <input type="password" id="password" value="test123" required>
+    </div>
+    
+    <div class="form-group">
+        <label>Name:</label>
+        <input type="text" id="name" value="Test Teacher" required>
+    </div>
+    
+    <div class="form-group">
+        <label>Specialization:</label>
+        <input type="text" id="specialization" value="Mathematics" placeholder="e.g., Mathematics, Computer Science">
+    </div>
+    
+    <button onclick="testTeacherRegistration()">Test Teacher Registration</button>
+    
+    <div id="result"></div>
+    <div id="logs" class="logs"></div>
+    
+    <script>
+        function addLog(message) {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logsDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+        
+        async function testTeacherRegistration() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const name = document.getElementById('name').value;
+            const specialization = document.getElementById('specialization').value;
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.innerHTML = '<div class="result">Testing teacher registration...</div>';
+            addLog('🚀 Starting teacher registration test');
+            
+            try {
+                addLog('📤 Step 1: Testing auth signup...');
+                const authResponse = await fetch('http://localhost:4000/api/auth/signup-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password,
+                        role: 'teacher',
+                        name
+                    })
+                });
+                
+                addLog(`📡 Auth response status: ${authResponse.status}`);
+                
+                if (!authResponse.ok) {
+                    const authError = await authResponse.json();
+                    addLog(`❌ Auth signup failed: ${JSON.stringify(authError)}`);
+                    resultDiv.innerHTML = `<div class="result error">Auth signup failed: ${authError.error || authResponse.statusText}</div>`;
+                    return;
+                }
+                
+                const authData = await authResponse.json();
+                addLog(`✅ Auth signup successful: ${JSON.stringify(authData)}`);
+                
+                if (!authData.user || !authData.user.id) {
+                    addLog(`❌ No userId in auth response: ${JSON.stringify(authData)}`);
+                    resultDiv.innerHTML = '<div class="result error">No userId received from auth signup</div>';
+                    return;
+                }
+                
+                addLog('📤 Step 2: Testing teacher profile creation...');
+                const profileResponse = await fetch('http://localhost:4000/api/teachers/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: authData.user.id,
+                        name,
+                        specialization: specialization || null
+                    })
+                });
+                
+                addLog(`📡 Profile response status: ${profileResponse.status}`);
+                
+                if (!profileResponse.ok) {
+                    const profileError = await profileResponse.json();
+                    addLog(`❌ Profile creation failed: ${JSON.stringify(profileError)}`);
+                    resultDiv.innerHTML = `<div class="result error">Profile creation failed: ${profileError.error || profileResponse.statusText}</div>`;
+                    return;
+                }
+                
+                const profileData = await profileResponse.json();
+                addLog(`✅ Teacher profile created: ${JSON.stringify(profileData)}`);
+                
+                resultDiv.innerHTML = `<div class="result success">✅ Teacher registration test successful!</div>`;
+                
+            } catch (error) {
+                addLog(`❌ Test failed: ${error.message}`);
+                resultDiv.innerHTML = `<div class="result error">Test failed: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

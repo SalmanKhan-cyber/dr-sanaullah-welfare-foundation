@@ -6,7 +6,7 @@ import { apiRequest } from '../lib/api';
 /**
  * Hook to check user verification status
  * Returns { verified, checking, userInfo }
- * Redirects to pending approval if not verified (except students/patients)
+ * Redirects to pending approval if not verified (except patients, donors, labs, pharmacy, blood_bank)
  */
 export function useVerification(role = null) {
 	const [verified, setVerified] = useState(null);
@@ -15,8 +15,8 @@ export function useVerification(role = null) {
 	const navigate = useNavigate();
 	const location = useLocation();
 
-	// Roles that don't need approval
-	const NO_APPROVAL_ROLES = ['student', 'patient', 'doctor', 'donor', 'lab', 'pharmacy', 'blood_bank'];
+	// Roles that don't need approval (can access immediately)
+	const NO_APPROVAL_ROLES = ['patient', 'donor', 'lab', 'pharmacy', 'blood_bank'];
 
 	useEffect(() => {
 		checkVerification();

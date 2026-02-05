@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cloudflare Pages Test</title>
+</head>
+<body>
+    <h1>Cloudflare Pages Accessibility Test</h1>
+    
+    <div>
+        <h3>Test Your Cloudflare Pages URL:</h3>
+        <input type="text" id="baseUrl" placeholder="https://your-site.pages.dev" style="width: 300px;">
+        <button onclick="testPages()">Test Pages</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        async function testPages() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            if (!baseUrl) {
+                alert('Please enter your Cloudflare Pages URL');
+                return;
+            }
+            
+            const pages = [
+                { path: '/', name: 'Home Page' },
+                { path: '/in-clinic', name: 'In-Clinic Booking' },
+                { path: '/doctors', name: 'Doctors List' },
+                { path: '/consult-online', name: 'Online Consultation' },
+                { path: '/login', name: 'Login Page' },
+                { path: '/about', name: 'About Page' }
+            ];
+            
+            let results = '<h3>Test Results:</h3>';
+            
+            for (const page of pages) {
+                try {
+                    const response = await fetch(baseUrl + page.path);
+                    const status = response.status;
+                    const statusText = response.statusText;
+                    
+                    if (status === 200) {
+                        results += `<div style="color: green;">✅ ${page.name}: ${status} ${statusText}</div>`;
+                    } else {
+                        results += `<div style="color: red;">❌ ${page.name}: ${status} ${statusText}</div>`;
+                    }
+                } catch (error) {
+                    results += `<div style="color: red;">❌ ${page.name}: ${error.message}</div>`;
+                }
+            }
+            
+            document.getElementById('results').innerHTML = results;
+        }
+    </script>
+</body>
+</html>
