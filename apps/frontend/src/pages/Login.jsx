@@ -622,9 +622,12 @@ export default function Login() {
 				if (needsApproval) {
 					setSuccess(`Account created successfully! Your registration is pending admin approval. Redirecting to approval page...`);
 					setTimeout(() => navigate('/pending-approval'), 2000);
+				} else if (finalRole === 'doctor') {
+					setSuccess(`Doctor account created successfully! Redirecting to admin panel...`);
+					setTimeout(() => navigate('/admin'), 2000);
 				} else {
 					setSuccess(`Account created successfully! Redirecting to ${finalRole} dashboard...`);
-					setTimeout(() => navigate(`/dashboard/${dashboardPath}`), 2000);
+					setTimeout(() => navigate(`/${finalRole}`), 2000);
 				}
 			} else {
 				setSuccess(`Additional ${finalRole} profile created! Redirecting to ${finalRole} dashboard...`);
