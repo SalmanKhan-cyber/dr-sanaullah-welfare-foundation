@@ -307,7 +307,7 @@ export default function Login() {
 				throw new Error('Invalid email format. Please enter a valid email address (e.g., name@example.com).');
 			}
 			
-			// ALWAYS use backend endpoint (more reliable and consistent)
+			// ALWAYS use backend endpoint with direct fetch (more reliable and consistent)
 			console.log('📧 Using backend email signup endpoint with:', { 
 				email: emailForSignup, 
 				hasPassword: !!password, 
@@ -317,8 +317,11 @@ export default function Login() {
 			});
 			
 			try {
-				const backendRes = await apiRequest('/api/auth/signup-email', {
+				const backendRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/auth/signup-email`, {
 					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
 					body: JSON.stringify({ 
 						email: emailForSignup, 
 						password, 
@@ -327,7 +330,19 @@ export default function Login() {
 					})
 				});
 				
-				userId = backendRes.user?.id;
+				console.log('🔍 Backend response status:', backendRes.status);
+				console.log('🔍 Backend response ok:', backendRes.ok);
+				
+				if (!backendRes.ok) {
+					const errorData = await backendRes.json().catch(() => ({ error: 'Signup failed' }));
+					console.error('❌ Backend signup failed:', errorData);
+					throw new Error(errorData.error || backendRes.statusText);
+				}
+				
+				const data = await backendRes.json();
+				console.log('✅ Backend signup successful:', data);
+				
+				userId = data.user?.id;
 				if (userId) {
 					console.log('✅ User created via backend:', userId);
 					isNewUser = true;
@@ -525,6 +540,10 @@ export default function Login() {
 					const doctorData = await doctorResponse.json();
 					console.log('✅ Doctor profile created:', doctorData);
 					console.log('✅ Doctor profile created with image_url:', imageUrl);
+					
+					// Doctor registration success - show approval message
+					setSuccess('Doctor registration successful! Your account is pending admin approval. Please check your email to verify your account.');
+					setStep(1); // Back to login
 				} catch (apiErr) {
 					console.error('Doctor profile creation failed:', apiErr);
 					// Don't throw - profile might already exist, which is fine for multiple profiles
@@ -808,7 +827,8 @@ export default function Login() {
 			const data = await response.json();
 			console.log('✅ Lab registration successful:', data);
 			
-			setSuccess('Lab registration successful! Please check your email to verify your account.');
+			// Lab registration success - show approval message
+			setSuccess('Lab registration successful! Your account is pending admin approval. Please check your email to verify your account.');
 			setStep(1); // Back to login
 		} catch (err) {
 			setError(err.message || 'Lab registration failed');
