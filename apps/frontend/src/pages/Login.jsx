@@ -617,17 +617,14 @@ export default function Login() {
 			const dashboardPath = roleToUrl(finalRole);
 			
 			if (isNewUser) {
-				// Check if user needs approval (only teachers and admins need approval)
-				const needsApproval = finalRole === 'teacher' || finalRole === 'admin';
+				// Check if user needs approval (teachers, doctors, students, labs, and admins need approval)
+				const needsApproval = ['teacher', 'admin', 'doctor', 'student', 'lab'].includes(finalRole);
 				if (needsApproval) {
 					setSuccess(`Account created successfully! Your registration is pending admin approval. Redirecting to approval page...`);
 					setTimeout(() => navigate('/pending-approval'), 2000);
-				} else if (finalRole === 'doctor') {
-					setSuccess(`Doctor account created successfully! Redirecting to admin panel...`);
-					setTimeout(() => navigate('/admin'), 2000);
 				} else {
 					setSuccess(`Account created successfully! Redirecting to ${finalRole} dashboard...`);
-					setTimeout(() => navigate(`/${finalRole}`), 2000);
+					setTimeout(() => navigate(`/dashboard/${dashboardPath}`), 2000);
 				}
 			} else {
 				setSuccess(`Additional ${finalRole} profile created! Redirecting to ${finalRole} dashboard...`);
