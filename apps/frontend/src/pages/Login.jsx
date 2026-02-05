@@ -311,7 +311,7 @@ export default function Login() {
 			console.log('� REGISTRATION STARTED');
 			console.log('🔥 selectedRole:', selectedRole);
 			console.log('🔥 emailForSignup:', emailForSignup);
-			console.log('�📧 Using backend email signup endpoint with:', { 
+			console.log('� Using backend email signup endpoint with:', { 
 				email: emailForSignup, 
 				hasPassword: !!password, 
 				passwordLength: password?.length,
@@ -497,19 +497,24 @@ export default function Login() {
 					// Remove profileImage from profileData before sending
 					const { profileImage, ...doctorData } = profileData;
 					
+					const doctorPayload = {
+						userId,
+						name,
+						consultation_fee: fee, // Send exact value as entered
+						discount_rate: discount,
+						timing,
+						image_url: imageUrl // Use uploaded image URL
+					};
+					
+					console.log('🔥 Doctor profile payload:', doctorPayload);
+					console.log('🔥 Sending to:', `${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/doctors/profile`);
+					
 					const doctorResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/doctors/profile`, {
 						method: 'POST',
 						headers: {
 							'Content-Type': 'application/json'
 						},
-						body: JSON.stringify({
-							userId,
-							name,
-							consultation_fee: fee, // Send exact value as entered
-							discount_rate: discount,
-							timing,
-							image_url: imageUrl // Use uploaded image URL
-						})
+						body: JSON.stringify(doctorPayload)
 					});
 					
 					console.log('🔍 Doctor profile response status:', doctorResponse.status);
