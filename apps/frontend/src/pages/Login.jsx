@@ -780,6 +780,40 @@ export default function Login() {
 		setError('');
 		
 		try {
+			// Upload image if provided
+			let imageUrl = null;
+			if (profileImage) {
+				setUploadingImage(true);
+				try {
+					console.log('📸 Starting image upload for teacher registration:', {
+						fileName: profileImage.name,
+						fileSize: profileImage.size,
+						fileType: profileImage.type,
+						userId: 'teacher-' + Date.now()
+					});
+					
+					const formData = new FormData();
+					formData.append('image', profileImage);
+					formData.append('userId', 'teacher-' + Date.now());
+					
+					const uploadRes = await apiRequest('/api/upload/profile-image', {
+						method: 'POST',
+						body: formData
+					});
+					
+					console.log('✅ Teacher image upload successful:', uploadRes);
+					imageUrl = uploadRes.url;
+				} catch (uploadErr) {
+					console.error('❌ Teacher image upload failed:', uploadErr);
+					console.warn('Image upload failed, backend will assign random avatar:', uploadErr);
+					// Continue - backend will assign random avatar
+				} finally {
+					setUploadingImage(false);
+				}
+			} else {
+				console.log('📸 No teacher profile image provided, backend will assign random avatar');
+			}
+			
 			// Create user account first
 			const { data, error } = await supabase.auth.signUp({
 				email,
@@ -801,7 +835,8 @@ export default function Login() {
 				body: JSON.stringify({
 					userId,
 					name,
-					...profileData
+					specialization: specialization || null,
+					image_url: imageUrl
 				})
 			});
 			
