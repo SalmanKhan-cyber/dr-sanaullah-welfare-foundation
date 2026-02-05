@@ -733,30 +733,55 @@ export default function Login() {
 		setError('');
 		
 		try {
-			// Create user account first
-			const { data, error } = await supabase.auth.signUp({
+			// Use the auth signup endpoint which creates user in users table
+			console.log('🚀 Starting lab auth signup with:', {
 				email,
-				password,
-				options: {
-					data: {
-						name,
-						role: 'lab'
-					}
-				}
+				name,
+				role: 'lab'
 			});
 			
-			if (error) throw error;
+			const { data, error } = await apiRequest('/api/auth/signup-email', {
+				method: 'POST',
+				body: JSON.stringify({
+					email,
+					password,
+					role: 'lab',
+					name
+				})
+			});
 			
-			// Create lab profile
-			const userId = data.user.id;
-			await apiRequest('/api/labs/profile', {
+			if (error) {
+				console.error('❌ Lab auth signup failed:', error);
+				throw error;
+			}
+			
+			console.log('✅ Lab auth account created:', data);
+			
+			// The auth endpoint returns { user: { id, email }, isExistingUser, message }
+			const userId = data.user?.id;
+			if (!userId) {
+				console.error('❌ Auth response structure:', data);
+				throw new Error('No userId received from auth signup');
+			}
+			
+			// Create lab profile using the lab-specific fields
+			const profileResponse = await apiRequest('/api/labs/profile', {
 				method: 'POST',
 				body: JSON.stringify({
 					userId,
-					name,
-					...profileData
+					name: labName || name,
+					location: labLocation || null,
+					contact_info: labContactInfo || null,
+					services: labServices || null
 				})
 			});
+			
+			if (profileResponse.error) {
+				console.error('❌ Lab profile creation failed:', profileResponse.error);
+				throw new Error(profileResponse.error);
+			}
+			
+			console.log('✅ Lab profile created:', profileResponse);
 			
 			setSuccess('Lab registration successful! Please check your email to verify your account.');
 			setStep(1); // Back to login
@@ -838,12 +863,6 @@ export default function Login() {
 			
 			console.log('✅ Teacher auth account created:', data);
 			
-			if (!data) {
-				console.error('❌ No data received from auth endpoint');
-				throw new Error('No response data from auth signup');
-			}
-			
-			// Now create teacher profile using the userId from auth response
 			// The auth endpoint returns { user: { id, email }, isExistingUser, message }
 			const userId = data.user?.id;
 			if (!userId) {
@@ -851,7 +870,8 @@ export default function Login() {
 				throw new Error('No userId received from auth signup');
 			}
 			
-			await apiRequest('/api/teachers/profile', {
+			// Create teacher profile using the userId from auth response
+			const profileResponse = await apiRequest('/api/teachers/profile', {
 				method: 'POST',
 				body: JSON.stringify({
 					userId,
@@ -860,6 +880,13 @@ export default function Login() {
 					image_url: imageUrl
 				})
 			});
+			
+			if (profileResponse.error) {
+				console.error('❌ Teacher profile creation failed:', profileResponse.error);
+				throw new Error(profileResponse.error);
+			}
+			
+			console.log('✅ Teacher profile created:', profileResponse);
 			
 			setSuccess('Teacher registration successful! Your account is pending admin approval. Please check your email to verify your account.');
 			setStep(1); // Back to login
