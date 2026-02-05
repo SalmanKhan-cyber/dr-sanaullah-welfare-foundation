@@ -483,7 +483,7 @@ export default function Login() {
 						} catch (uploadErr) {
 							console.error('❌ Doctor image upload exception:', uploadErr);
 							console.warn('Image upload failed, backend will assign random avatar:', uploadErr);
-							// Continue - backend will assign random avatar
+							imageUrl = null; // CRITICAL: Ensure null if upload fails
 						} finally {
 							setUploadingImage(false);
 						}
@@ -899,7 +899,7 @@ export default function Login() {
 				} catch (uploadErr) {
 					console.error('❌ Teacher image upload exception:', uploadErr);
 					console.warn('Image upload failed, backend will assign random avatar:', uploadErr);
-					// Continue - backend will assign random avatar
+					imageUrl = null; // CRITICAL: Ensure null if upload fails
 				} finally {
 					setUploadingImage(false);
 				}
