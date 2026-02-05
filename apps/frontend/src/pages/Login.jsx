@@ -754,7 +754,7 @@ export default function Login() {
 					lab_name: labName || name,
 					location: labLocation || null,
 					contact_info: labContactInfo || null,
-					services: labServices || null,
+					services: labServices ? (Array.isArray(labServices) ? labServices : labServices.split(',').map(s => s.trim()).filter(s => s)) : [],
 					user_name: name,
 					email,
 					password
