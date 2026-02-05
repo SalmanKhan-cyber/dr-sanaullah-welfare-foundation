@@ -657,6 +657,19 @@ export default function Login() {
 					console.log('🔥 About to set success message...');
 					setSuccess(`Account created successfully! Your registration is pending admin approval. Redirecting to approval page...`);
 					console.log('🔥 Success message set, waiting 3 seconds before redirect...');
+					
+					// CRITICAL: Force sign out to prevent any automatic login
+					try {
+						await supabase.auth.signOut();
+						console.log('🔥 Force signed out user after registration');
+					} catch (signOutErr) {
+						console.warn('⚠️ Could not sign out:', signOutErr);
+					}
+					
+					// CRITICAL: Clear any existing session data
+					localStorage.clear();
+					sessionStorage.clear();
+					
 					setTimeout(() => {
 						console.log('🔥 About to redirect to approval page...');
 						navigate('/pending-approval');
