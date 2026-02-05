@@ -740,8 +740,13 @@ export default function Login() {
 				role: 'lab'
 			});
 			
-			const { data, error } = await apiRequest('/api/auth/signup-email', {
+			console.log('🔍 API URL being used:', import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app'));
+			
+			const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/auth/signup-email`, {
 				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
 				body: JSON.stringify({
 					email,
 					password,
@@ -750,12 +755,22 @@ export default function Login() {
 				})
 			});
 			
-			if (error) {
-				console.error('❌ Lab auth signup failed:', error);
-				throw error;
+			console.log('🔍 Raw response status:', response.status);
+			console.log('🔍 Raw response ok:', response.ok);
+			
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
+				console.error('❌ Raw response error:', errorData);
+				throw new Error(errorData.error || response.statusText);
 			}
 			
-			console.log('✅ Lab auth account created:', data);
+			const data = await response.json();
+			console.log('🔍 Raw response data:', data);
+			
+			if (!data) {
+				console.error('❌ No data received from auth endpoint');
+				throw new Error('No response data from auth signup');
+			}
 			
 			// The auth endpoint returns { user: { id, email }, isExistingUser, message }
 			const userId = data.user?.id;
@@ -846,8 +861,13 @@ export default function Login() {
 				role: 'teacher'
 			});
 			
-			const { data, error } = await apiRequest('/api/auth/signup-email', {
+			console.log('🔍 API URL being used:', import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app'));
+			
+			const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/auth/signup-email`, {
 				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
 				body: JSON.stringify({
 					email,
 					password,
@@ -856,12 +876,22 @@ export default function Login() {
 				})
 			});
 			
-			if (error) {
-				console.error('❌ Auth signup failed:', error);
-				throw error;
+			console.log('🔍 Raw response status:', response.status);
+			console.log('🔍 Raw response ok:', response.ok);
+			
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
+				console.error('❌ Raw response error:', errorData);
+				throw new Error(errorData.error || response.statusText);
 			}
 			
-			console.log('✅ Teacher auth account created:', data);
+			const data = await response.json();
+			console.log('🔍 Raw response data:', data);
+			
+			if (!data) {
+				console.error('❌ No data received from auth endpoint');
+				throw new Error('No response data from auth signup');
+			}
 			
 			// The auth endpoint returns { user: { id, email }, isExistingUser, message }
 			const userId = data.user?.id;
