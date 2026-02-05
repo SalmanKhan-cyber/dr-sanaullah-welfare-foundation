@@ -308,7 +308,10 @@ export default function Login() {
 			}
 			
 			// ALWAYS use backend endpoint with direct fetch (more reliable and consistent)
-			console.log('📧 Using backend email signup endpoint with:', { 
+			console.log('� REGISTRATION STARTED');
+			console.log('🔥 selectedRole:', selectedRole);
+			console.log('🔥 emailForSignup:', emailForSignup);
+			console.log('�📧 Using backend email signup endpoint with:', { 
 				email: emailForSignup, 
 				hasPassword: !!password, 
 				passwordLength: password?.length,
@@ -643,10 +646,14 @@ export default function Login() {
 				});
 				
 				if (needsApproval) {
+					console.log('🔥 REGISTRATION APPROVAL FLOW STARTED');
+					console.log('🔥 needsApproval:', needsApproval);
+					console.log('🔥 finalRole:', finalRole);
+					console.log('🔥 About to set success message...');
 					setSuccess(`Account created successfully! Your registration is pending admin approval. Redirecting to approval page...`);
-					console.log('✅ Approval message set, waiting 3 seconds before redirect...');
+					console.log('🔥 Success message set, waiting 3 seconds before redirect...');
 					setTimeout(() => {
-						console.log('✅ Redirecting to approval page now...');
+						console.log('🔥 About to redirect to approval page...');
 						navigate('/pending-approval');
 					}, 3000); // Increased delay to ensure message is seen
 					return; // CRITICAL: Stop all execution - no dashboard access
