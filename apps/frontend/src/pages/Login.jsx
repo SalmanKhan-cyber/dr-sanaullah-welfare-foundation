@@ -459,6 +459,13 @@ export default function Login() {
 							formData.append('image', profileData.profileImage);
 							formData.append('userId', userId);
 							
+							console.log('📤 Sending FormData to upload endpoint:', {
+								endpoint: `${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/upload/profile-image`,
+								hasImage: !!profileData.profileImage,
+								imageName: profileData.profileImage.name,
+								imageSize: profileData.profileImage.size
+							});
+							
 							const uploadRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/upload/profile-image`, {
 								method: 'POST',
 								body: formData
@@ -476,6 +483,7 @@ export default function Login() {
 								const uploadData = await uploadRes.json();
 								console.log('✅ Doctor image upload successful:', uploadData);
 								imageUrl = uploadData.url;
+								console.log('✅ Image URL set to:', imageUrl);
 							}
 						} finally {
 							setUploadingImage(false);
@@ -498,7 +506,7 @@ export default function Login() {
 							consultation_fee: fee, // Send exact value as entered
 							discount_rate: discount,
 							timing,
-							profileImage: profileImage // Pass the file, will upload after user creation
+							image_url: imageUrl // Pass the uploaded image URL
 						})
 					});
 					
@@ -835,6 +843,13 @@ export default function Login() {
 					formData.append('image', profileImage);
 					formData.append('userId', 'teacher-' + Date.now());
 					
+					console.log('📤 Sending FormData to upload endpoint:', {
+						endpoint: `${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/upload/profile-image`,
+						hasImage: !!profileImage,
+						imageName: profileImage.name,
+						imageSize: profileImage.size
+					});
+					
 					const uploadRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/upload/profile-image`, {
 						method: 'POST',
 						body: formData
@@ -852,6 +867,7 @@ export default function Login() {
 						const uploadData = await uploadRes.json();
 						console.log('✅ Teacher image upload successful:', uploadData);
 						imageUrl = uploadData.url;
+						console.log('✅ Image URL set to:', imageUrl);
 					}
 				} finally {
 					setUploadingImage(false);
