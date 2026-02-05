@@ -767,6 +767,53 @@ export default function Login() {
 		}
 	}
 
+	async function handleTeacherRegistration(e) {
+		e.preventDefault();
+		
+		// Validation
+		if (!name || !email || !password) {
+			setError('Please fill all required fields');
+			return;
+		}
+		
+		setLoading(true);
+		setError('');
+		
+		try {
+			// Create user account first
+			const { data, error } = await supabase.auth.signUp({
+				email,
+				password,
+				options: {
+					data: {
+						name,
+						role: 'teacher'
+					}
+				}
+			});
+			
+			if (error) throw error;
+			
+			// Create teacher profile
+			const userId = data.user.id;
+			await apiRequest('/api/teachers/profile', {
+				method: 'POST',
+				body: JSON.stringify({
+					userId,
+					name,
+					...profileData
+				})
+			});
+			
+			setSuccess('Teacher registration successful! Your account is pending admin approval. Please check your email to verify your account.');
+			setStep(1); // Back to login
+		} catch (err) {
+			setError(err.message || 'Teacher registration failed');
+		} finally {
+			setLoading(false);
+		}
+	}
+
 
 	async function handlePhoneOtp(e) {
 		e.preventDefault();
@@ -933,7 +980,7 @@ export default function Login() {
 								Fill in your details to create your {roles.find(r => r.id === selectedRole)?.name?.toLowerCase() || 'account'}
 							</p>
 							
-							<form onSubmit={selectedRole === 'patient' ? handleProfileCompletion : selectedRole === 'doctor' ? handleDoctorProfileCompletion : selectedRole === 'lab' ? handleLabRegistration : handleEmailSignup} className="space-y-4">
+							<form onSubmit={selectedRole === 'patient' ? handleProfileCompletion : selectedRole === 'doctor' ? handleDoctorProfileCompletion : selectedRole === 'lab' ? handleLabRegistration : selectedRole === 'teacher' ? handleTeacherRegistration : handleEmailSignup} className="space-y-4">
 								{/* Basic Info - All Roles */}
 								<div className="border-b border-gray-200 pb-4 mb-4">
 									<h3 className="text-sm font-semibold text-gray-700 mb-3">Basic Information</h3>
