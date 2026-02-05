@@ -830,8 +830,10 @@ export default function Login() {
 			console.log('✅ Teacher auth account created:', data);
 			
 			// Now create teacher profile using the userId from auth response
-			const userId = data.userId || data.user?.id;
+			// The auth endpoint returns { user: { id, email }, isExistingUser, message }
+			const userId = data.user?.id;
 			if (!userId) {
+				console.error('❌ Auth response structure:', data);
 				throw new Error('No userId received from auth signup');
 			}
 			
