@@ -459,36 +459,60 @@ export default function Login() {
 							formData.append('image', profileData.profileImage);
 							formData.append('userId', userId);
 							
-							const uploadRes = await apiRequest('/api/upload/profile-image', {
+							const uploadRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/upload/profile-image`, {
 								method: 'POST',
 								body: formData
 							});
 							
-							console.log('✅ Image upload successful:', uploadRes);
-							imageUrl = uploadRes.url;
-						} catch (uploadErr) {
-							console.error('❌ Image upload failed:', uploadErr);
-							console.warn('Image upload failed, backend will assign random avatar:', uploadErr);
-							// Continue - backend will assign random avatar
+							console.log('🔍 Upload response status:', uploadRes.status);
+							console.log('🔍 Upload response ok:', uploadRes.ok);
+							
+							if (!uploadRes.ok) {
+								const uploadError = await uploadRes.json().catch(() => ({ error: 'Upload failed' }));
+								console.error('❌ Doctor image upload failed:', uploadError);
+								console.warn('Image upload failed, backend will assign random avatar:', uploadError);
+								// Continue - backend will assign random avatar
+							} else {
+								const uploadData = await uploadRes.json();
+								console.log('✅ Doctor image upload successful:', uploadData);
+								imageUrl = uploadData.url;
+							}
 						} finally {
 							setUploadingImage(false);
 						}
 					} else {
-						console.log('📸 No profile image provided, backend will assign random avatar');
+						console.log('📸 No doctor profile image provided, backend will assign random avatar');
 					}
 					
 					// Remove profileImage from profileData before sending
 					const { profileImage, ...doctorData } = profileData;
 					
-					await apiRequest('/api/doctors/profile', {
+					const doctorResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/doctors/profile`, {
 						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
 						body: JSON.stringify({
 							userId,
 							name,
-							...doctorData,
-							image_url: imageUrl // Will be null if upload failed, backend assigns random
+							consultation_fee: fee, // Send exact value as entered
+							discount_rate: discount,
+							timing,
+							profileImage: profileImage // Pass the file, will upload after user creation
 						})
 					});
+					
+					console.log('🔍 Doctor profile response status:', doctorResponse.status);
+					console.log('🔍 Doctor profile response ok:', doctorResponse.ok);
+					
+					if (!doctorResponse.ok) {
+						const doctorError = await doctorResponse.json().catch(() => ({ error: 'Profile creation failed' }));
+						console.error('❌ Doctor profile creation failed:', doctorError);
+						throw new Error(doctorError.error || doctorResponse.statusText);
+					}
+					
+					const doctorData = await doctorResponse.json();
+					console.log('✅ Doctor profile created:', doctorData);
 					console.log('✅ Doctor profile created with image_url:', imageUrl);
 				} catch (apiErr) {
 					console.error('Doctor profile creation failed:', apiErr);
@@ -811,17 +835,24 @@ export default function Login() {
 					formData.append('image', profileImage);
 					formData.append('userId', 'teacher-' + Date.now());
 					
-					const uploadRes = await apiRequest('/api/upload/profile-image', {
+					const uploadRes = await fetch(`${import.meta.env.VITE_API_BASE_URL || (import.meta.env.MODE === 'development' ? 'http://localhost:4000' : 'https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app')}/api/upload/profile-image`, {
 						method: 'POST',
 						body: formData
 					});
 					
-					console.log('✅ Teacher image upload successful:', uploadRes);
-					imageUrl = uploadRes.url;
-				} catch (uploadErr) {
-					console.error('❌ Teacher image upload failed:', uploadErr);
-					console.warn('Image upload failed, backend will assign random avatar:', uploadErr);
-					// Continue - backend will assign random avatar
+					console.log('🔍 Upload response status:', uploadRes.status);
+					console.log('🔍 Upload response ok:', uploadRes.ok);
+					
+					if (!uploadRes.ok) {
+						const uploadError = await uploadRes.json().catch(() => ({ error: 'Upload failed' }));
+						console.error('❌ Teacher image upload failed:', uploadError);
+						console.warn('Image upload failed, backend will assign random avatar:', uploadError);
+						// Continue - backend will assign random avatar
+					} else {
+						const uploadData = await uploadRes.json();
+						console.log('✅ Teacher image upload successful:', uploadData);
+						imageUrl = uploadData.url;
+					}
 				} finally {
 					setUploadingImage(false);
 				}
