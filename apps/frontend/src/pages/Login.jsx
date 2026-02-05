@@ -814,22 +814,27 @@ export default function Login() {
 				console.log('📸 No teacher profile image provided, backend will assign random avatar');
 			}
 			
-			// Create user account first
-			const { data, error } = await supabase.auth.signUp({
-				email,
-				password,
-				options: {
-					data: {
-						name,
-						role: 'teacher'
-					}
-				}
+			// Use the auth signup endpoint which creates user in users table
+			const { data, error } = await apiRequest('/api/auth/signup-email', {
+				method: 'POST',
+				body: JSON.stringify({
+					email,
+					password,
+					role: 'teacher',
+					name
+				})
 			});
 			
 			if (error) throw error;
 			
-			// Create teacher profile
-			const userId = data.user.id;
+			console.log('✅ Teacher auth account created:', data);
+			
+			// Now create teacher profile using the userId from auth response
+			const userId = data.userId || data.user?.id;
+			if (!userId) {
+				throw new Error('No userId received from auth signup');
+			}
+			
 			await apiRequest('/api/teachers/profile', {
 				method: 'POST',
 				body: JSON.stringify({
@@ -843,6 +848,7 @@ export default function Login() {
 			setSuccess('Teacher registration successful! Your account is pending admin approval. Please check your email to verify your account.');
 			setStep(1); // Back to login
 		} catch (err) {
+			console.error('❌ Teacher registration error:', err);
 			setError(err.message || 'Teacher registration failed');
 		} finally {
 			setLoading(false);
