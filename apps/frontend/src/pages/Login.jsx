@@ -544,6 +544,7 @@ export default function Login() {
 					// Doctor registration success - show approval message
 					setSuccess('Doctor registration successful! Your account is pending admin approval. Please check your email to verify your account.');
 					setStep(1); // Back to login
+					return; // Stop execution here - don't continue to main approval logic
 				} catch (apiErr) {
 					console.error('Doctor profile creation failed:', apiErr);
 					// Don't throw - profile might already exist, which is fine for multiple profiles
@@ -830,6 +831,7 @@ export default function Login() {
 			// Lab registration success - show approval message
 			setSuccess('Lab registration successful! Your account is pending admin approval. Please check your email to verify your account.');
 			setStep(1); // Back to login
+			return; // Stop execution here - don't continue to main approval logic
 		} catch (err) {
 			setError(err.message || 'Lab registration failed');
 		} finally {
@@ -978,6 +980,7 @@ export default function Login() {
 			
 			setSuccess('Teacher registration successful! Your account is pending admin approval. Please check your email to verify your account.');
 			setStep(1); // Back to login
+			return; // Stop execution here - don't continue to main approval logic
 		} catch (err) {
 			console.error('❌ Teacher registration error:', err);
 			setError(err.message || 'Teacher registration failed');
