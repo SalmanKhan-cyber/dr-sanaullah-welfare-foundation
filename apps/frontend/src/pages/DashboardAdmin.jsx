@@ -68,7 +68,7 @@ export default function DashboardAdmin() {
 		admission_date: '',
 		status: 'active'
 	});
-	const [stats, setStats] = useState({ totalUsers: 0, totalDonations: 0, totalAmount: 0, totalDoctors: 0, totalPatients: 0, totalLabs: 0, totalDonors: 0 });
+	const [stats, setStats] = useState({ totalUsers: 0, totalDonations: 0, totalAmount: 0, totalDoctors: 0, totalPatients: 0, totalLabs: 0, totalDonors: 0, totalStudents: 0 });
 	const [loading, setLoading] = useState(false);
 	const [userRole, setUserRole] = useState(null);
 	const [roleWarning, setRoleWarning] = useState(false);
@@ -502,11 +502,11 @@ export default function DashboardAdmin() {
 						...prev, 
 						totalUsers: usersData.users?.length || 0,
 						totalDonations: donationsData.donations?.length || 0,
-						totalAmount: donationsData.donations?.reduce((sum, d) => sum + Number(d.amount), 0) || 0,
-						totalDoctors: doctorsData.count || 0,
+						totalDoctors: doctorsData.doctors?.length || 0,
 						totalPatients: patientsData.patients?.length || 0,
 						totalLabs: labsData.labs?.length || 0,
-						totalDonors: donors.length || 0
+						totalStudents: studentsData.students?.length || 0,
+						totalDonors: donorsData.donors?.length || 0
 					}));
 				}
 			} else if (activeTab === 'patients') {
@@ -2299,6 +2299,15 @@ export default function DashboardAdmin() {
 								<p className="text-3xl font-bold text-white">{stats.totalLabs}</p>
 							</div>
 							<div className="text-4xl opacity-80">🔬</div>
+						</div>
+					</div>
+					<div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-2xl shadow-xl transform hover:scale-105 transition-all cursor-pointer" onClick={() => setActiveTab('students')}>
+						<div className="flex items-center justify-between">
+							<div>
+								<p className="text-indigo-100 text-sm font-medium mb-1">Students</p>
+								<p className="text-3xl font-bold text-white">{stats.totalStudents}</p>
+							</div>
+							<div className="text-4xl opacity-80">👨‍🎓</div>
 						</div>
 					</div>
 					<div className="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-2xl shadow-xl transform hover:scale-105 transition-all cursor-pointer" onClick={() => setActiveTab('donations')}>
