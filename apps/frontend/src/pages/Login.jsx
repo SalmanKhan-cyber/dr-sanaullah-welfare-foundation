@@ -601,10 +601,10 @@ export default function Login() {
 				});
 				
 				if (needsApproval) {
-					setSuccess(`Account created successfully! Your registration is pending admin approval. Please check your email and wait for admin approval before logging in.`);
-					// CRITICAL: No automatic redirect - user must log in manually after approval
-					setStep(1); // Go back to login
-					return; // STOP - no dashboard access, no redirect
+					setSuccess(`Account created successfully! Redirecting to ${finalRole} dashboard...`);
+					// CRITICAL: Auto-login for immediate access
+					setTimeout(() => navigate(`/dashboard/${dashboardPath}`), 2000);
+					return; // Auto-login and redirect to dashboard
 				} else {
 					setSuccess(`Account created successfully! Redirecting to ${finalRole} dashboard...`);
 					setTimeout(() => navigate(`/dashboard/${dashboardPath}`), 2000);
@@ -614,10 +614,10 @@ export default function Login() {
 				// Check if this role needs approval before allowing dashboard access
 				const needsApprovalForExisting = ['teacher', 'admin', 'doctor', 'student', 'lab'].includes(finalRole);
 				if (needsApprovalForExisting) {
-					setSuccess(`Additional ${finalRole} profile created! Your account is pending admin approval. Please check your email and wait for admin approval before logging in.`);
-					// CRITICAL: No automatic redirect - user must log in manually after approval
-					setStep(1); // Go back to login
-					return; // STOP - no dashboard access, no redirect
+					setSuccess(`Additional ${finalRole} profile created! Redirecting to ${finalRole} dashboard...`);
+					// CRITICAL: Auto-login for immediate access
+					setTimeout(() => navigate(`/dashboard/${dashboardPath}`), 2000);
+					return; // Auto-login and redirect to dashboard
 				}
 				setTimeout(() => navigate(`/dashboard/${dashboardPath}`), 2000);
 			}

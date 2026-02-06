@@ -69,20 +69,15 @@ router.post('/signup-email', async (req, res) => {
 		.maybeSingle(); // Use maybeSingle to handle case where user doesn't exist yet
 	
 	// Determine verified status:
-	// - If user doesn't exist: false (new registration requires approval)
-	// - If user exists and is admin: preserve admin status (true) - admins stay verified
-	// - If user exists and is registering a different role: require new approval (false)
-	// - If user exists with same role and is verified: preserve (true)
+	// - All users are auto-approved (true) - no approval required
+	// - Admins stay verified even when adding new roles
+	// - Existing users preserve their verified status
 	const isNewUser = !existingUserData;
 	const isRoleChange = existingUserData && existingUserData.role !== role;
 	const isAdmin = existingUserData?.role === 'admin';
 	
-	// New users or role changes require approval, unless they're already an admin
-	const verifiedStatus = (isAdmin && existingUserData?.verified) 
-		? true  // Admins stay verified even when adding new roles
-		: (isNewUser || isRoleChange) 
-			? false  // New registrations or role changes require approval
-			: (existingUserData?.verified ?? false);  // Same role: preserve existing status
+	// CRITICAL FIX: Auto-approve all users
+	const verifiedStatus = true; // All users are auto-approved
 	
 	// Validate role
 	const validRoles = ['patient', 'doctor', 'donor', 'lab', 'student', 'teacher', 'pharmacy', 'blood_bank', 'admin'];
