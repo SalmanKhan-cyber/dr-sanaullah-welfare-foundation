@@ -6156,6 +6156,164 @@ export default function DashboardAdmin() {
 				</div>
 			)}
 
+			{showAddStudent && (
+				<div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+					<div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+						<div className="flex items-center justify-between mb-6">
+							<h3 className="text-2xl font-bold text-gray-900">Add New Student</h3>
+							<button
+								onClick={() => {
+									setShowAddStudent(false);
+									setEditingStudent(null);
+									setStudentForm({
+										name: '',
+										email: '',
+										phone: '',
+										course_id: '',
+										roll_number: '',
+										grade: '',
+										section: '',
+										admission_date: '',
+										status: 'active'
+									});
+								}}
+								className="text-gray-500 hover:text-gray-900 text-2xl"
+							>
+								✕
+							</button>
+						</div>
+						<div className="space-y-3">
+							<div>
+								<label className="block text-sm font-medium mb-1">Name *</label>
+								<input
+									className="w-full border p-2 rounded"
+									value={studentForm.name}
+									onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })}
+									placeholder="Student Name"
+									required
+								/>
+							</div>
+							<div>
+								<label className="block text-sm font-medium mb-1">Email</label>
+								<input
+									type="email"
+									className="w-full border p-2 rounded"
+									value={studentForm.email}
+									onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
+									placeholder="student@example.com"
+								/>
+							</div>
+							<div>
+								<label className="block text-sm font-medium mb-1">Phone</label>
+								<input
+									type="tel"
+									className="w-full border p-2 rounded"
+									value={studentForm.phone}
+									onChange={(e) => setStudentForm({ ...studentForm, phone: e.target.value })}
+									placeholder="+92 3xx xxxxxxx"
+								/>
+							</div>
+							<div>
+								<label className="block text-sm font-medium mb-1">Course</label>
+								<select
+									className="w-full border p-2 rounded"
+									value={studentForm.course_id}
+									onChange={(e) => setStudentForm({ ...studentForm, course_id: e.target.value })}
+								>
+									<option value="">Select a course</option>
+									{courses.map((c) => (
+										<option key={c.id} value={c.id}>
+											{c.title}
+										</option>
+									))}
+								</select>
+							</div>
+							<div className="grid grid-cols-2 gap-3">
+								<div>
+									<label className="block text-sm font-medium mb-1">Roll Number</label>
+									<input
+										className="w-full border p-2 rounded"
+										value={studentForm.roll_number}
+										onChange={(e) => setStudentForm({ ...studentForm, roll_number: e.target.value })}
+										placeholder="e.g. 12"
+									/>
+								</div>
+								<div>
+									<label className="block text-sm font-medium mb-1">Grade</label>
+									<input
+										className="w-full border p-2 rounded"
+										value={studentForm.grade}
+										onChange={(e) => setStudentForm({ ...studentForm, grade: e.target.value })}
+										placeholder="e.g. A"
+									/>
+								</div>
+							</div>
+							<div className="grid grid-cols-2 gap-3">
+								<div>
+									<label className="block text-sm font-medium mb-1">Section</label>
+									<input
+										className="w-full border p-2 rounded"
+										value={studentForm.section}
+										onChange={(e) => setStudentForm({ ...studentForm, section: e.target.value })}
+										placeholder="e.g. B"
+									/>
+								</div>
+								<div>
+									<label className="block text-sm font-medium mb-1">Status</label>
+									<select
+										className="w-full border p-2 rounded"
+										value={studentForm.status}
+										onChange={(e) => setStudentForm({ ...studentForm, status: e.target.value })}
+									>
+										<option value="active">Active</option>
+										<option value="inactive">Inactive</option>
+									</select>
+								</div>
+							</div>
+							<div>
+								<label className="block text-sm font-medium mb-1">Admission Date</label>
+								<input
+									type="date"
+									className="w-full border p-2 rounded"
+									value={studentForm.admission_date}
+									onChange={(e) => setStudentForm({ ...studentForm, admission_date: e.target.value })}
+								/>
+							</div>
+						</div>
+						<div className="flex gap-2 mt-4">
+							<button
+								onClick={() => {
+									setShowAddStudent(false);
+									setEditingStudent(null);
+									setStudentForm({
+										name: '',
+										email: '',
+										phone: '',
+										course_id: '',
+										roll_number: '',
+										grade: '',
+										section: '',
+										admission_date: '',
+										status: 'active'
+									});
+								}}
+								className="flex-1 bg-brand text-white px-4 py-2 rounded hover:bg-brand-dark"
+							>
+								Save Student
+							</button>
+							<button
+								onClick={() => {
+									setShowAddStudent(false);
+								}}
+								className="flex-1 bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+							>
+								Cancel
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
 			{/* Add Patient Modal */}
 			{showAddPatient && (
 				<div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
