@@ -293,9 +293,9 @@ export default function DashboardDoctor() {
 									<p>Loading...</p>
 								) : !doctor ? (
 									<div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-										<p className="text-yellow-800 font-semibold mb-3">⚠️ Doctor Profile Not Found</p>
+										<p className="text-yellow-800 font-semibold mb-3">👋 Welcome to Your Doctor Dashboard</p>
 										<p className="text-yellow-700 text-sm mb-4">
-											Your doctor profile has not been created yet. Please create your profile below to get started.
+											Let's set up your doctor profile to get started. This will only take a moment.
 										</p>
 										<button
 											onClick={() => setEditing(true)}
