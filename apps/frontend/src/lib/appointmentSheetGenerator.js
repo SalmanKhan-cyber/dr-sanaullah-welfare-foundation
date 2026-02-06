@@ -232,8 +232,8 @@ export function generateAppointmentSheetHTML(appointmentData) {
             
             <div class="footer">
                 <strong>Dr. Sanaullah Welfare Foundation</strong> | 
-                📍 Main Hospital Address | 
-                📞 Emergency: 123-456-7890 | 
+                📍 Pak Medical centre Khayber Bazar Peshawar Pakistan | 
+                📞 03159949963 | 
                 🌐 www.drsanaullahwelfarefoundation.com | 
                 Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
             </div>
