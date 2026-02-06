@@ -49,6 +49,8 @@ const corsOptions = {
     "https://drsanaullahwelfarefoundation.com",
     "https://www.drsanaullahwelfarefoundation.com",
     "https://dswff.pages.dev",
+    "https://d0f096e4.dswf.pages.dev",
+    "https://*.dswf.pages.dev",
     "https://app.drsanaullahwelfarefoundation.com",
     "https://dr-sanaullah-welfare-foundation-production-d17f.up.railway.app",
     "file://", // For local testing
