@@ -296,8 +296,8 @@ export function generateAppointmentSlipHTML(appointmentData) {
                 <div class="header-content">
                     <div class="logo-section">
                         <div class="logo">
-                            <img src="/logo1.jpeg" alt="Dr. Sanaullah Welfare Foundation Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                            <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; font-size:16mm; color:#16a085; font-weight:bold;">🏥</div>
+                            <img src="https://raw.githubusercontent.com/SalmanKhan-cyber/dr-sanaullah-welfare-foundation/main/public/logo1.jpeg" alt="Dr. Sanaullah Welfare Foundation Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; font-size:16mm; color:#16a085; font-weight:bold;">DSWF</div>
                         </div>
                         <div class="foundation-info">
                             <h1>Dr. Sanaullah Welfare Foundation</h1>
@@ -386,8 +386,8 @@ export function generateAppointmentSlipHTML(appointmentData) {
             <div class="footer">
                 <div class="footer-row">
                     <span class="footer-emphasis">Dr. Sanaullah Welfare Foundation</span> | 
-                    📍 Karachi, Pakistan | 
-                    📞 Emergency: 021-1234567
+                    📍 Pak Medical centre Khayber Bazar Peshawar Pakistan | 
+                    📞 03159949963
                 </div>
                 <div class="footer-row">
                     🌐 www.drsanaullahwelfarefoundation.com | 
