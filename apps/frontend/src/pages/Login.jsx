@@ -476,8 +476,8 @@ export default function Login() {
 						throw new Error(doctorError.error || doctorResponse.statusText);
 					}
 					
-					const doctorData = await doctorResponse.json();
-					console.log('✅ Doctor profile created:', doctorData);
+					const doctorResponseData = await doctorResponse.json();
+					console.log('✅ Doctor profile created:', doctorResponseData);
 					console.log('✅ Doctor profile created with image_url:', imageUrl);
 					
 					// Doctor registration success - show approval message
