@@ -279,6 +279,15 @@ export default function Login() {
 		setLoading(true);
 		setError('');
 		try {
+			// CRITICAL: prevent mixing sessions when registering a new role/user.
+			// If someone is currently logged in (commonly as patient), keep them from
+			// staying logged in while creating a new student account.
+			try {
+				await supabase.auth.signOut();
+			} catch (_e) {
+				// ignore
+			}
+
 			let userId;
 			let isNewUser = false;
 
@@ -602,9 +611,10 @@ export default function Login() {
 				
 				if (needsApproval) {
 					setSuccess(`Account created successfully! Your registration is pending admin approval. Please check your email and wait for admin approval before logging in.`);
-					// CRITICAL: No automatic redirect - user must log in manually after approval
-					setStep(1); // Go back to login
-					return; // STOP - no dashboard access, no redirect
+					// CRITICAL: No dashboard access. Send to pending approval screen to avoid
+					// landing on any previously active dashboard (e.g., patient).
+					setTimeout(() => navigate('/pending-approval'), 1200);
+					return;
 				} else {
 					setSuccess(`Account created successfully! Redirecting to ${finalRole} dashboard...`);
 					setTimeout(() => navigate(`/dashboard/${dashboardPath}`), 2000);
@@ -615,9 +625,8 @@ export default function Login() {
 				const needsApprovalForExisting = ['teacher', 'admin', 'doctor', 'student', 'lab'].includes(finalRole);
 				if (needsApprovalForExisting) {
 					setSuccess(`Additional ${finalRole} profile created! Your account is pending admin approval. Please check your email and wait for admin approval before logging in.`);
-					// CRITICAL: No automatic redirect - user must log in manually after approval
-					setStep(1); // Go back to login
-					return; // STOP - no dashboard access, no redirect
+					setTimeout(() => navigate('/pending-approval'), 1200);
+					return;
 				}
 				setTimeout(() => navigate(`/dashboard/${dashboardPath}`), 2000);
 			}
