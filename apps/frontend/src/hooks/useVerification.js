@@ -39,24 +39,34 @@ export function useVerification(role = null) {
 					const userRole = userRes.user.role;
 					const isVerified = userRes.user.verified;
 					
-					// SIMPLIFIED: If user is not verified and role needs approval, redirect to pending
+					console.log(`🔍 User verification check: role=${userRole}, verified=${isVerified}`);
+					
+					// CORRECT LOGIC: Check user role and approval status
+					if (userRole === 'admin') {
+						console.log('✅ Admin user - allowing access to admin dashboard');
+						setVerified(true);
+						setChecking(false);
+						return;
+					}
+					
+					// CORRECT LOGIC: Check if user is pending approval
 					if (!isVerified && !NO_APPROVAL_ROLES.includes(userRole)) {
-						console.log(`⚠️ User role ${userRole} is not verified. Redirecting to pending approval.`);
+						console.log(`⚠️ User role ${userRole} is pending approval. Redirecting to waiting page.`);
 						setVerified(false);
 						setChecking(false);
 						navigate('/pending-approval');
 						return;
 					}
 					
-					// SIMPLIFIED: If user is verified, allow access
+					// CORRECT LOGIC: Approved users can access their dashboard
 					if (isVerified) {
-						console.log(`✅ User verified successfully. Role: ${userRole}, Verified: ${isVerified}`);
+						console.log(`✅ Approved user - allowing access to ${userRole} dashboard`);
 						setVerified(true);
 						setChecking(false);
 						return;
 					}
 					
-					// SIMPLIFIED: If user doesn't need approval, allow access
+					// CORRECT LOGIC: Roles that don't need approval
 					if (NO_APPROVAL_ROLES.includes(userRole)) {
 						console.log(`✅ User role ${userRole} doesn't need approval. Allowing access.`);
 						setVerified(true);
@@ -64,16 +74,16 @@ export function useVerification(role = null) {
 						return;
 					}
 					
-					// If we get here, user is not verified and needs approval
-					console.log(`⚠️ User role ${userRole} requires approval but is not verified. Redirecting to pending approval.`);
+					// CORRECT LOGIC: If we get here, user is not verified and needs approval
+					console.log(`⚠️ User role ${userRole} requires approval but is not verified. Redirecting to waiting page.`);
 					setVerified(false);
 					setChecking(false);
 					navigate('/pending-approval');
 				}
 			} catch (err) {
 				console.error('Failed to check verification:', err);
-				// If API fails, allow access (fail open for better UX)
-				setVerified(true);
+				// If API fails, redirect to login for security
+				navigate('/login');
 			}
 		} catch (err) {
 			console.error('Failed to get user:', err);

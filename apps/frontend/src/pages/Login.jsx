@@ -949,44 +949,64 @@ export default function Login() {
 				throw new Error('User not found');
 			}
 			
-			// Verify user has access to this role
-			try {
-				const rolesRes = await apiRequest('/api/auth/user-roles');
-				const userRoles = rolesRes.roles || [];
-				const hasRole = userRoles.some(r => r.role === role);
+			// CORRECT LOGIC: Check user verification status before allowing dashboard access
+			const userRes = await apiRequest('/api/users/me');
+			if (userRes.user) {
+				const userRole = userRes.user.role;
+				const isVerified = userRes.user.verified;
 				
-				if (!hasRole) {
-					throw new Error(`You do not have access to the ${role} dashboard. Please contact an administrator.`);
+				console.log(`🔍 Role choice verification: selectedRole=${role}, userRole=${userRole}, verified=${isVerified}`);
+				
+				// CORRECT LOGIC: Only allow admin access if role is admin
+				if (role === 'admin' && userRole !== 'admin') {
+					throw new Error('Access denied: Only administrators can access the admin dashboard.');
 				}
-			} catch (roleCheckErr) {
-				console.warn('Could not verify role access, continuing anyway:', roleCheckErr);
+				
+				// CORRECT LOGIC: Check if user is pending approval for professional roles
+				const needsApproval = ['doctor', 'teacher', 'student', 'lab'].includes(role);
+				if (needsApproval && !isVerified) {
+					throw new Error(`Your ${role} account is pending admin approval. Please wait for approval before accessing the dashboard.`);
+				}
+				
+				// CORRECT LOGIC: Verify user has access to this role
+				try {
+					const rolesRes = await apiRequest('/api/auth/user-roles');
+					const userRoles = rolesRes.roles || [];
+					const hasRole = userRoles.some(r => r.role === role);
+					
+					if (!hasRole) {
+						throw new Error(`You do not have access to the ${role} dashboard. Please contact an administrator.`);
+					}
+				} catch (roleCheckErr) {
+					console.warn('Could not verify role access, continuing anyway:', roleCheckErr);
+				}
+				
+				// Update the user's role in the users table
+				try {
+					await apiRequest('/api/auth/set-role', {
+						method: 'POST',
+						body: JSON.stringify({ 
+							userId: user.id, 
+							role: role 
+						})
+					});
+					console.log('✅ Role updated successfully');
+				} catch (err) {
+					console.warn('Could not update role, continuing anyway:', err);
+				}
+				
+				setSuccess('Redirecting...');
+				setShowRoleSelection(false);
+				// Convert role to URL format (underscore to hyphen)
+				const roleToUrl = (r) => {
+					if (!r) return r;
+					return r.replace(/_/g, '-');
+				};
+				const dashboardPath = roleToUrl(role);
+				setTimeout(() => {
+					navigate(`/dashboard/${dashboardPath}`);
+				}, 500);
 			}
-			
-			// Update the user's role in the users table
-			try {
-				await apiRequest('/api/auth/set-role', {
-					method: 'POST',
-					body: JSON.stringify({ 
-						userId: user.id, 
-						role: role 
-					})
-				});
-				console.log('✅ Role updated successfully');
-			} catch (err) {
-				console.warn('Could not update role, continuing anyway:', err);
-			}
-			
-			setSuccess('Redirecting...');
-			setShowRoleSelection(false);
-			// Convert role to URL format (underscore to hyphen)
-			const roleToUrl = (r) => {
-				if (!r) return r;
-				return r.replace(/_/g, '-');
-			};
-			const dashboardPath = roleToUrl(role);
-			setTimeout(() => {
-				navigate(`/dashboard/${dashboardPath}`);
-			}, 500);
 		} catch (err) {
 			setError(err.message || 'Failed to select role. Please try again.');
 			setLoading(false);
