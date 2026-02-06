@@ -2544,7 +2544,7 @@ export default function DashboardAdmin() {
 				<div className="bg-white rounded-2xl shadow-xl mb-6">
 					<div className="border-b border-gray-200">
 						<nav className="flex space-x-8 px-6 overflow-x-auto" aria-label="Tabs">
-							{['overview', 'patients', 'donations', 'doctors', 'teachers', 'students', 'courses', 'pharmacy', 'labs', 'lab-reports', 'blood-bank', 'specialties', 'conditions', 'surgery-categories', 'surgery-bookings', 'home-services', 'jobs'].map(tab => (
+							{['overview', 'patients', 'donations', 'doctors', 'teachers', 'students', 'courses', 'pharmacy', 'labs', 'lab-reports', 'blood-bank', 'specialties', 'conditions', 'surgery-categories', 'surgery-bookings', 'home-services', 'jobs'].map(tab => {
 								<button
 									key={tab}
 									onClick={() => setActiveTab(tab)}
@@ -2556,7 +2556,7 @@ export default function DashboardAdmin() {
 								>
 									{tab === 'lab-reports' ? 'Lab Reports' : tab === 'blood-bank' ? 'Blood Bank' : tab === 'surgery-categories' ? 'Surgery Categories' : tab === 'surgery-bookings' ? 'Surgery Bookings' : tab === 'home-services' ? 'Home Services' : tab === 'jobs' ? 'Jobs' : tab === 'students' ? 'Students' : tab.charAt(0).toUpperCase() + tab.slice(1)}
 								</button>
-							))}
+							})}
 						</nav>
 					</div>
 
