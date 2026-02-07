@@ -470,19 +470,35 @@ export default function Login() {
 			
 			if (selectedRole === 'doctor' && Object.keys(profileData).length > 0) {
 				try {
-					// SIMPLIFIED: No image upload - backend will assign random avatar
-					const imageUrl = null;
-					
-					// Remove profileImage from profileData before sending
-					const { profileImage, ...doctorData } = profileData;
+					// Upload image if provided; otherwise backend will assign random avatar
+					let imageUrl = null;
+					if (profileData.profileImage) {
+						setUploadingImage(true);
+						try {
+							const formData = new FormData();
+							formData.append('image', profileData.profileImage);
+							formData.append('userId', userId);
+							const uploadRes = await apiRequest('/api/upload/profile-image', {
+								method: 'POST',
+								body: formData
+							});
+							imageUrl = uploadRes.url;
+						} catch (uploadErr) {
+							console.warn('Doctor image upload failed, backend will assign random avatar:', uploadErr);
+						} finally {
+							setUploadingImage(false);
+						}
+					}
 					
 					const doctorPayload = {
 						userId,
 						name,
-						consultation_fee: fee, // Send exact value as entered
-						discount_rate: discount,
-						timing,
-						image_url: imageUrl // Backend will assign random avatar
+						specialization: profileData.specialization || null,
+						degrees: profileData.degrees || null,
+						consultation_fee: profileData.consultation_fee,
+						discount_rate: profileData.discount_rate,
+						timing: profileData.timing || null,
+						image_url: imageUrl // null => backend assigns random avatar
 					};
 					
 					console.log('🔥 Doctor profile payload (simplified):', doctorPayload);
