@@ -7,6 +7,48 @@ import { authMiddleware } from '../middleware/auth.js';
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB limit
 
+function normalizeEmptyToNull(value) {
+	if (value === undefined) return undefined;
+	if (value === null) return null;
+	if (typeof value === 'string' && value.trim() === '') return null;
+	return value;
+}
+
+function normalizeDoctorUpdates(rawUpdates = {}) {
+	const updates = { ...rawUpdates };
+
+	if (Object.prototype.hasOwnProperty.call(updates, 'consultation_fee')) {
+		const v = normalizeEmptyToNull(updates.consultation_fee);
+		updates.consultation_fee = v === null ? null : Number(v);
+		if (updates.consultation_fee !== null && Number.isNaN(updates.consultation_fee)) {
+			updates.consultation_fee = null;
+		}
+	}
+
+	if (Object.prototype.hasOwnProperty.call(updates, 'discount_rate')) {
+		const v = normalizeEmptyToNull(updates.discount_rate);
+		updates.discount_rate = v === null ? null : Number(v);
+		if (updates.discount_rate !== null && Number.isNaN(updates.discount_rate)) {
+			updates.discount_rate = null;
+		}
+	}
+
+	if (Object.prototype.hasOwnProperty.call(updates, 'specialization')) {
+		updates.specialization = normalizeEmptyToNull(updates.specialization);
+	}
+	if (Object.prototype.hasOwnProperty.call(updates, 'degrees')) {
+		updates.degrees = normalizeEmptyToNull(updates.degrees);
+	}
+	if (Object.prototype.hasOwnProperty.call(updates, 'image_url')) {
+		updates.image_url = normalizeEmptyToNull(updates.image_url);
+	}
+	if (Object.prototype.hasOwnProperty.call(updates, 'timing')) {
+		updates.timing = normalizeEmptyToNull(updates.timing);
+	}
+
+	return updates;
+}
+
 // Get all doctors
 router.get('/', async (_req, res) => {
 	try {
@@ -61,7 +103,7 @@ router.get('/me', async (req, res) => {
 router.put('/me', async (req, res) => {
 	try {
 		const userId = req.user.id;
-		const updates = req.body;
+		const updates = normalizeDoctorUpdates(req.body);
 		console.log(`🔍 Updating/creating doctor profile for user: ${userId}`);
 		console.log(`📝 Profile updates:`, updates);
 		
@@ -107,8 +149,8 @@ router.put('/me', async (req, res) => {
 					name: updates.name || userData?.name || 'Doctor',
 					specialization: updates.specialization || null,
 					degrees: updates.degrees || null,
-					consultation_fee: updates.consultation_fee ? parseFloat(updates.consultation_fee) : 0,
-					discount_rate: updates.discount_rate ? parseFloat(updates.discount_rate) : 50,
+					consultation_fee: updates.consultation_fee === null || updates.consultation_fee === undefined ? 0 : Number(updates.consultation_fee),
+					discount_rate: updates.discount_rate === null || updates.discount_rate === undefined ? 50 : Number(updates.discount_rate),
 					timing: updates.timing || null
 				}, {
 					onConflict: 'user_id'
@@ -137,16 +179,17 @@ router.put('/me', async (req, res) => {
 // Add doctor (admin only)
 router.post('/', async (req, res) => {
 	try {
-		const { name, specialization, discount_rate, degrees, image_url, consultation_fee, timing } = req.body || {};
+		const body = normalizeDoctorUpdates(req.body || {});
+		const { name, specialization, discount_rate, degrees, image_url, consultation_fee, timing } = body;
 		if (!name) return res.status(400).json({ error: 'Name required' });
 		
 		const doctorData = {
 			name,
 			specialization: specialization || null,
-			discount_rate: discount_rate || 50,
+			discount_rate: discount_rate === null || discount_rate === undefined ? 50 : discount_rate,
 			degrees: degrees || null,
 			image_url: image_url || null,
-			consultation_fee: consultation_fee ? Number(consultation_fee) : null,
+			consultation_fee: consultation_fee === null || consultation_fee === undefined ? null : consultation_fee,
 			timing: timing || null
 		};
 		
@@ -167,7 +210,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
 	try {
 		const { id } = req.params;
-		const updates = req.body;
+		const updates = normalizeDoctorUpdates(req.body);
 		
 		const { data, error } = await supabaseAdmin
 			.from('doctors')
