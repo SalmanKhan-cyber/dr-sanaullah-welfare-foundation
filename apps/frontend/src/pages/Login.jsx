@@ -94,6 +94,7 @@ export default function Login() {
 		// Get user role from metadata and database; prefer database if present
 		const roleFromMetadata = freshUser?.user_metadata?.role || data.user?.user_metadata?.role;
 		let role = roleFromMetadata;
+		let verified = null;
 		console.log('🔍 Role from user_metadata:', roleFromMetadata);
 		
 		// Check if user has multiple roles/profiles
@@ -110,13 +111,14 @@ export default function Login() {
 		try {
 			const { data: userData, error: userError } = await supabase
 				.from('users')
-				.select('role')
+				.select('role, verified')
 				.eq('id', freshUser?.id || data.user.id)
 				.single();
 			
 			console.log('🔍 Role from users table:', userData?.role, 'Error:', userError);
 			if (!userError && userData?.role) {
 				role = userData.role;
+				verified = userData?.verified;
 				// If metadata mismatches, try to sync it via backend
 				if (roleFromMetadata && roleFromMetadata !== userData.role) {
 					try {
@@ -143,11 +145,14 @@ export default function Login() {
 			try {
 				const { data: userData } = await supabase
 					.from('users')
-					.select('role')
+					.select('role, verified')
 					.eq('id', freshUser?.id || data.user.id)
 					.single();
 				if (userData?.role) {
 					dbRole = userData.role;
+					if (verified === null || verified === undefined) {
+						verified = userData?.verified;
+					}
 					console.log('🔍 Database role:', dbRole);
 				}
 			} catch (dbErr) {
@@ -231,6 +236,20 @@ export default function Login() {
 		
 		const dashboardPath = roleToUrl(role);
 		console.log('✅ Final role determined:', role, 'Redirecting to:', `/dashboard/${dashboardPath}`);
+		
+		// Approval gating: teacher/student/admin/doctor/lab must be approved by admin before dashboard access
+		const rolesRequiringApproval = ['teacher', 'admin', 'doctor', 'student', 'lab'];
+		const normalizedRole = (role || '').replace(/-/g, '_').toLowerCase();
+		if (rolesRequiringApproval.includes(normalizedRole) && verified === false) {
+			try {
+				await supabase.auth.signOut();
+			} catch (_e) {
+				// ignore
+			}
+			setSuccess('Your account is pending admin approval. Please wait for approval before logging in.');
+			setTimeout(() => navigate('/pending-approval'), 600);
+			return;
+		}
 		
 		// Check for returnUrl in query params
 		const urlParams = new URLSearchParams(window.location.search);
